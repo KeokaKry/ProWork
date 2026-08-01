@@ -4,10 +4,22 @@ import com.worktrcker.app.entity.Employee;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-// @Repository говорит Spring, что это компонент для работы с базой данных
+import java.util.Optional;
+
+/**
+ * Репозиторий для работы с сотрудниками.
+ * Предоставляет методы для поиска сотрудников по телефону и username.
+ */
 @Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
-    // Магия Spring Data JPA: 
-    // Мы просто наследуем JpaRepository, и Spring САМ напишет за нас 
-    // методы save(), findAll(), findById(), deleteById() и т.д.!
+    
+    /**
+     * Поиск сотрудника по номеру телефона
+     */
+    Employee findByPhoneNumber(String phoneNumber);
+    
+    /**
+     * Поиск сотрудника по username (логину)
+     */
+    Optional<Employee> findByUsername(String username);
 }
