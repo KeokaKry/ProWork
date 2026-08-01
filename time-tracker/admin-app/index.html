@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Tracker - Администратор</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 32px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px;
+            background: #f8f9fa;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .photo-item {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            aspect-ratio: 1;
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .photo-item img:hover {
+            transform: scale(1.1);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: #4facfe;
+            color: white;
+        }
+
+        .status-completed {
+            background: #43e97b;
+            color: white;
+        }
+
+        .salary-highlight {
+            font-size: 18px;
+            font-weight: bold;
+            color: #43e97b;
+        }
+
+        .fine-input {
+            width: 100px;
+            display: inline-block;
+        }
+
+        @media (max-width: 768px) {
+            table {
+                font-size: 14px;
+            }
+            
+            th, td {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👨‍💼 Панель администратора</h1>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('employees')">👥 Сотрудники</button>
+            <button class="tab-btn" onclick="showTab('sessions')">📊 Табель</button>
+            <button class="tab-btn" onclick="showTab('tasks')">📋 Задания</button>
+            <button class="tab-btn" onclick="showTab('export')">📤 Экспорт</button>
+        </div>
+
+        <!-- Employees Tab -->
+        <div id="employeesTab" class="tab-content active">
+            <div class="card">
+                <h2>Сотрудники и тарифы</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ФИО</th>
+                            <th>Профессия</th>
+                            <th>Ставка/час</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="employeesTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Sessions Tab -->
+        <div id="sessionsTab" class="tab-content">
+            <div class="card">
+                <h2>Рабочие сессии и зарплата</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th>Сотрудник</th>
+                            <th>Начало</th>
+                            <th>Конец</th>
+                            <th>Часы</th>
+                            <th>Ставка</th>
+                            <th>Штраф</th>
+                            <th>Зарплата</th>
+                            <th>Фото</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sessionsTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tasks Tab -->
+        <div id="tasksTab" class="tab-content">
+            <div class="card">
+                <h2>Назначить задание</h2>
+                <div class="form-group">
+                    <label>Сотрудник</label>
+                    <select id="taskEmployee"></select>
+                </div>
+                <div class="form-group">
+                    <label>День недели</label>
+                    <select id="taskDay">
+                        <option value="0">Воскресенье</option>
+                        <option value="1">Понедельник</option>
+                        <option value="2">Вторник</option>
+                        <option value="3">Среда</option>
+                        <option value="4">Четверг</option>
+                        <option value="5">Пятница</option>
+                        <option value="6">Суббота</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Описание задания</label>
+                    <textarea id="taskDescription" rows="3" placeholder="Опишите задание..."></textarea>
+                </div>
+                <button class="btn btn-success" onclick="assignTask()">Назначить задание</button>
+            </div>
+        </div>
+
+        <!-- Export Tab -->
+        <div id="exportTab" class="tab-content">
+            <div class="card">
+                <h2>Экспорт табеля</h2>
+                <div class="form-group">
+                    <label>Выберите сотрудника</label>
+                    <select id="exportEmployee">
+                        <option value="">Все сотрудники</option>
+                    </select>
+                </div>
+                <button class="btn btn-success" onclick="exportTimesheet()">📥 Скачать Excel (XLSX)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Photo Modal -->
+    <div id="photoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📸 Фото выполненной работы</h2>
+                <button class="close-modal" onclick="closeModal('photoModal')">&times;</button>
+            </div>
+            <div class="photo-grid" id="photoGrid"></div>
+        </div>
+    </div>
+
+    <!-- Fine Modal -->
+    <div id="fineModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚠️ Штраф</h2>
+                <button class="close-modal" onclick="closeModal('fineModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>Сумма штрафа</label>
+                <input type="number" id="fineAmount" min="0" step="1" placeholder="0">
+            </div>
+            <input type="hidden" id="fineSessionId">
+            <button class="btn btn-danger" onclick="applyFine()">Применить штраф</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+        let employees = [];
+        let sessions = [];
+
+        // Initialize
+        async function init() {
+            await loadEmployees();
+            await loadSessions();
+        }
+
+        // Tab navigation
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(`${tabName}Tab`).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Load employees
+        async function loadEmployees() {
+            try {
+                const response = await fetch(`${API_URL}/admin/employees`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    employees = data.employees;
+                    renderEmployees();
+                    populateEmployeeSelects();
+                }
+            } catch (error) {
+                console.error('Error loading employees:', error);
+            }
+        }
+
+        // Render employees table
+        function renderEmployees() {
+            const tbody = document.getElementById('employeesTable');
+            tbody.innerHTML = employees.map(emp => `
+                <tr>
+                    <td>${emp.name}</td>
+                    <td>${emp.profession}</td>
+                    <td>
+                        <input type="number" 
+                               value="${emp.hourly_rate}" 
+                               min="0" 
+                               step="0.01"
+                               style="width: 100px;"
+                               onchange="updateRate('${emp.id}', this.value)">
+                    </td>
+                    <td>
+                        <button class="btn btn-success" onclick="updateRate('${emp.id}', document.querySelector('input[onchange*=\\'${emp.id}\\']').value)">
+                            Сохранить
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Update hourly rate
+        async function updateRate(employeeId, rate) {
+            try {
+                await fetch(`${API_URL}/admin/employee/${employeeId}/rate`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ hourlyRate: parseFloat(rate) })
+                });
+                showNotification('Ставка обновлена!');
+            } catch (error) {
+                showNotification('Ошибка: ' + error.message, 'error');
+            }
+        }
+
+        // Load sessions
+        async function loadSessions() {
+            try {
+                const response = await fetch(`${API_URL}/admin/sessions`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    sessions = data.sessions;
+                    renderSessions();
+                }
+            } catch (error) {
+                console.error('Error loading sessions:', error);
+            }
+        }
+
+        // Render sessions table
+        function renderSessions() {
+            const tbody = document.getElementById('sessionsTable');
+            tbody.innerHTML = sessions.map(session => `
+                <tr>
+                    <td>${session.date}</td>
+                    <td>${session.employee_name}</td>
+                    <td>${formatTime(session.start_time)}</td>
+                    <td>${formatTime(session.end_time)}</td>
+                    <td>${session.total_hours.toFixed(2)}</td>
+                    <td>${session.hourly_rate} ₽</td>
+                    <td>${session.fine_amount} ₽</td>
+                    <td class="salary-highlight">${session.calculated_salary.toFixed(2)} ₽</td>
+                    <td>
+                        <button class="btn" onclick="viewPhotos('${session.id}')">📸</button>
+                    </td>
+                    <td>
+                        <button class="btn btn-warning" onclick="openFineModal('${session.id}')">Штраф</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // View photos
+        async function viewPhotos(sessionId) {
+            try {
+                const response = await fetch(`${API_URL}/admin/photos/${sessionId}`);
+                const data = await response.json();
+                
+                if (data.success && data.photos.length > 0) {
+                    const photoGrid = document.getElementById('photoGrid');
+                    photoGrid.innerHTML = data.photos.map(photo => `
+                        <div class="photo-item">
+                            <img src="http://localhost:3000/${photo.photo_path.replace(/\\/g, '/')}" 
+                                 onclick="downloadPhoto('${photo.photo_path}')">
+                        </div>
+                    `).join('');
+                    
+                    document.getElementById('photoModal').classList.add('active');
+                } else {
+                    showNotification('Нет фотографий', 'error');
+                }
+            } catch (error) {
+                showNotification('Ошибка: ' + error.message, 'error');
+            }
+        }
+
+        // Download photo
+        function downloadPhoto(photoPath) {
+            const link = document.createElement('a');
+            link.href = `http://localhost:3000/${photoPath.replace(/\\/g, '/')}`;
+            link.download = photoPath.split('/').pop();
+            link.click();
+        }
+
+        // Open fine modal
+        function openFineModal(sessionId) {
+            document.getElementById('fineSessionId').value = sessionId;
+            document.getElementById('fineAmount').value = '';
+            document.getElementById('fineModal').classList.add('active');
+        }
+
+        // Apply fine
+        async function applyFine() {
+            const sessionId = document.getElementById('fineSessionId').value;
+            const amount = parseFloat(document.getElementById('fineAmount').value);
+            
+            if (!amount || amount <= 0) {
+                showNotification('Введите корректную сумму штрафа', 'error');
+                return;
+            }
+            
+            try {
+                await fetch(`${API_URL}/admin/fine`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId, amount })
+                });
+                
+                closeModal('fineModal');
+                await loadSessions();
+                showNotification('Штраф применен!');
+            } catch (error) {
+                showNotification('Ошибка: ' + error.message, 'error');
+            }
+        }
+
+        // Populate employee selects
+        function populateEmployeeSelects() {
+            const taskSelect = document.getElementById('taskEmployee');
+            const exportSelect = document.getElementById('exportEmployee');
+            
+            const options = employees.map(emp => 
+                `<option value="${emp.id}">${emp.name} (${emp.profession})</option>`
+            ).join('');
+            
+            taskSelect.innerHTML = '<option value="">Выберите сотрудника</option>' + options;
+            exportSelect.innerHTML = '<option value="">Все сотрудники</option>' + options;
+        }
+
+        // Assign task
+        async function assignTask() {
+            const employeeId = document.getElementById('taskEmployee').value;
+            const dayOfWeek = parseInt(document.getElementById('taskDay').value);
+            const description = document.getElementById('taskDescription').value;
+            
+            if (!employeeId || !description) {
+                showNotification('Заполните все поля', 'error');
+                return;
+            }
+            
+            try {
+                await fetch(`${API_URL}/admin/task`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ employeeId, dayOfWeek, description })
+                });
+                
+                showNotification('Задание назначено!');
+                document.getElementById('taskDescription').value = '';
+            } catch (error) {
+                showNotification('Ошибка: ' + error.message, 'error');
+            }
+        }
+
+        // Export timesheet
+        function exportTimesheet() {
+            const employeeId = document.getElementById('exportEmployee').value;
+            const url = employeeId 
+                ? `${API_URL}/admin/export-timesheet/${employeeId}`
+                : `${API_URL}/admin/export-timesheet`;
+            
+            window.open(url, '_blank');
+            showNotification('Табель скачивается...');
+        }
+
+        // Close modal
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Format time
+        function formatTime(isoString) {
+            if (!isoString) return '-';
+            const date = new Date(isoString);
+            return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Notification
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 25px;
+                background: ${type === 'error' ? '#f5576c' : '#4facfe'};
+                color: white;
+                border-radius: 10px;
+                box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        // Close modals on outside click
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>

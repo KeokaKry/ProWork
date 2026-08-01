@@ -6,21 +6,33 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.Data;
 
-// @Data (от Lombok) автоматически создаст геттеры, сеттеры, toString и equals
-// Тебе не нужно писать их вручную! Это экономит кучу времени.
+/**
+ * Сущность "Сотрудник".
+ * Хранит информацию о сотруднике: ФИО, должность, ставку, телефон и логин.
+ */
 @Data
-// @Entity говорит Spring: "Этот класс нужно превратить в таблицу в базе данных"
 @Entity
 public class Employee {
 
-    // @Id говорит, что это первичный ключ (уникальный идентификатор)
-    // GenerationType.IDENTITY означает, что база данных сама будет придумывать номера (1, 2, 3...)
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String fullName;       // ФИО сотрудника
-    private String position;       // Должность (например, "Электрик")
-    private Double hourlyRate;     // Ставка в час (например, 500.0)
-    private String phoneNumber;    // Телефон (для связи и логина)
+    /** Полное имя сотрудника (Фамилия Имя) */
+    private String fullName;
+    
+    /** Должность (например, "Электрик", "Уборщик") */
+    private String position;
+    
+    /** Ставка в час (устанавливается администратором) */
+    private Double hourlyRate;
+    
+    /** Номер телефона для связи */
+    private String phoneNumber;
+    
+    /** Логин для входа в систему (username) */
+    private String username;
+    
+    /** Пароль (в реальном проекте нужно хешировать) */
+    private String password;
 }

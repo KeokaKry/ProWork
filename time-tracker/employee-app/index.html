@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Tracker - Сотрудник</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .timer {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: #4facfe;
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease;
+            z-index: 1000;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .task-list {
+            list-style: none;
+        }
+
+        .task-item {
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .photo-preview {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .photo-preview img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .info-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .info-card p {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        .info-card strong {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⏰ Учет рабочего времени</h1>
+
+        <!-- Registration Section -->
+        <div id="registrationSection" class="section">
+            <h2>Регистрация сотрудника</h2>
+            <div class="form-group">
+                <label>ФИО</label>
+                <input type="text" id="employeeName" placeholder="Иванов Иван Иванович">
+            </div>
+            <div class="form-group">
+                <label>Профессия</label>
+                <select id="employeeProfession">
+                    <option value="Строитель">Строитель</option>
+                    <option value="Электрик">Электрик</option>
+                    <option value="Сантехник">Сантехник</option>
+                    <option value="Маляр">Маляр</option>
+                    <option value="Плотник">Плотник</option>
+                    <option value="Разнорабочий">Разнорабочий</option>
+                </select>
+            </div>
+            <button onclick="registerEmployee()">Зарегистрироваться</button>
+        </div>
+
+        <!-- Main Work Section -->
+        <div id="workSection" class="section hidden">
+            <div class="status-badge" id="workStatus">Не на работе</div>
+            
+            <div class="info-card">
+                <p><strong>Сотрудник:</strong> <span id="displayEmployeeName"></span></p>
+                <p><strong>Профессия:</strong> <span id="displayProfession"></span></p>
+            </div>
+
+            <!-- Today's Tasks -->
+            <div class="section">
+                <h2>📋 Задания на сегодня</h2>
+                <ul class="task-list" id="taskList">
+                    <li class="task-item">Загрузка заданий...</li>
+                </ul>
+            </div>
+
+            <!-- Work Day Control -->
+            <div id="notWorking" class="section">
+                <h2>🌅 Начало рабочего дня</h2>
+                <button onclick="startWorkDay()" class="btn-success">Начать рабочий день</button>
+            </div>
+
+            <div id="working" class="section hidden">
+                <h2>⏱️ Рабочее время</h2>
+                <div class="timer" id="workTimer">00:00:00</div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button onclick="toggleBreak()" id="breakBtn" class="btn-warning">☕ Перерыв</button>
+                    <button onclick="toggleLunch()" id="lunchBtn" class="btn-warning">🍽️ Обед</button>
+                </div>
+
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>📸 Фото выполненной работы</label>
+                    <input type="file" id="workPhotos" multiple accept="image/*" capture="camera">
+                    <div class="photo-preview" id="photoPreview"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>💬 Комментарий о выполненной работе</label>
+                    <textarea id="workComment" rows="3" placeholder="Опишите, что было сделано за день..."></textarea>
+                </div>
+
+                <button onclick="endWorkDay()" class="btn-secondary">🏠 Завершить рабочий день</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+        let employeeId = localStorage.getItem('employeeId');
+        let employeeName = localStorage.getItem('employeeName');
+        let employeeProfession = localStorage.getItem('employeeProfession');
+        let currentSessionId = null;
+        let workStartTime = null;
+        let timerInterval = null;
+        let isOnBreak = false;
+        let isOnLunch = false;
+
+        // Initialize app
+        function init() {
+            if (employeeId) {
+                document.getElementById('registrationSection').classList.add('hidden');
+                document.getElementById('workSection').classList.remove('hidden');
+                document.getElementById('displayEmployeeName').textContent = employeeName;
+                document.getElementById('displayProfession').textContent = employeeProfession;
+                loadCurrentSession();
+                loadTasks();
+                setupReminders();
+            }
+        }
+
+        // Register employee
+        async function registerEmployee() {
+            const name = document.getElementById('employeeName').value.trim();
+            const profession = document.getElementById('employeeProfession').value;
+
+            if (!name) {
+                showNotification('Введите ФИО!', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/employee/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, profession })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || `HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                if (data.success) {
+                    employeeId = data.employee.id;
+                    employeeName = data.employee.name;
+                    employeeProfession = data.employee.profession;
+
+                    localStorage.setItem('employeeId', employeeId);
+                    localStorage.setItem('employeeName', employeeName);
+                    localStorage.setItem('employeeProfession', employeeProfession);
+
+                    document.getElementById('registrationSection').classList.add('hidden');
+                    document.getElementById('workSection').classList.remove('hidden');
+                    document.getElementById('displayEmployeeName').textContent = employeeName;
+                    document.getElementById('displayProfession').textContent = employeeProfession;
+                    
+                    showNotification('Регистрация успешна!');
+                    loadTasks();
+                    setupReminders();
+                } else {
+                    showNotification('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                showNotification('Ошибка регистрации: ' + error.message, 'error');
+            }
+        }
+
+        // Load current session
+        async function loadCurrentSession() {
+            try {
+                const response = await fetch(`${API_URL}/employee/session/${employeeId}`);
+                const data = await response.json();
+                
+                if (data.success && data.session) {
+                    currentSessionId = data.session.id;
+                    workStartTime = new Date(data.session.start_time);
+                    document.getElementById('notWorking').classList.add('hidden');
+                    document.getElementById('working').classList.remove('hidden');
+                    document.getElementById('workStatus').textContent = 'На работе';
+                    startTimer();
+                }
+            } catch (error) {
+                console.error('Error loading session:', error);
+            }
+        }
+
+        // Start work day
+        async function startWorkDay() {
+            try {
+                const response = await fetch(`${API_URL}/employee/start-day`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ employeeId })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    currentSessionId = data.sessionId;
+                    workStartTime = new Date();
+                    document.getElementById('notWorking').classList.add('hidden');
+                    document.getElementById('working').classList.remove('hidden');
+                    document.getElementById('workStatus').textContent = 'На работе';
+                    startTimer();
+                    showNotification('Рабочий день начался!');
+                }
+            } catch (error) {
+                showNotification('Ошибка: ' + error.message, 'error');
+            }
+        }
+
+        // End work day
+        async function endWorkDay() {
+            const comment = document.getElementById('workComment').value;
+            const photoInput = document.getElementById('workPhotos');
+            const photos = photoInput.files;
+
+            if (photos.length === 0) {
+                showNotification('Добавьте хотя бы одно фото!', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('sessionId', currentSessionId);
+            formData.append('employeeId', employeeId);
+            formData.append('comment', comment);
+
+            for (let i = 0; i < photos.length; i++) {
+                formData.append('photos', photos[i]);
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/employee/end-day`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    stopTimer();
+                    currentSessionId = null;
+                    workStartTime = null;
+                    document.getElementById('notWorking').classList.remove('hidden');
+                    document.getElementById('working').classList.add('hidden');
+                    document.getElementById('workStatus').textContent = 'Не на работе';
+                    document.getElementById('workComment').value = '';
+                    document.getElementById('workPhotos').value = '';
+                    document.getElementById('photoPreview').innerHTML = '';
+                    showNotification('Рабочий день завершен! Фото отправлены.');
+                }
+            } catch (error) {
+                showNotification('Ошибка: ' + error.message, 'error');
+            }
+        }
+
+        // Toggle break
+        async function toggleBreak() {
+            const btn = document.getElementById('breakBtn');
+            
+            if (!isOnBreak) {
+                try {
+                    await fetch(`${API_URL}/employee/break-start`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sessionId: currentSessionId })
+                    });
+                    isOnBreak = true;
+                    btn.textContent = '✅ Вернуться с перерыва';
+                    btn.classList.remove('btn-warning');
+                    btn.classList.add('btn-success');
+                    showNotification('Перерыв начался!');
+                } catch (error) {
+                    showNotification('Ошибка: ' + error.message, 'error');
+                }
+            } else {
+                try {
+                    await fetch(`${API_URL}/employee/break-end`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sessionId: currentSessionId })
+                    });
+                    isOnBreak = false;
+                    btn.textContent = '☕ Перерыв';
+                    btn.classList.remove('btn-success');
+                    btn.classList.add('btn-warning');
+                    showNotification('Перерыв окончен!');
+                } catch (error) {
+                    showNotification('Ошибка: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // Toggle lunch
+        async function toggleLunch() {
+            const btn = document.getElementById('lunchBtn');
+            
+            if (!isOnLunch) {
+                try {
+                    await fetch(`${API_URL}/employee/lunch-start`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sessionId: currentSessionId })
+                    });
+                    isOnLunch = true;
+                    btn.textContent = '✅ Вернуться с обеда';
+                    btn.classList.remove('btn-warning');
+                    btn.classList.add('btn-success');
+                    showNotification('Обед начался!');
+                } catch (error) {
+                    showNotification('Ошибка: ' + error.message, 'error');
+                }
+            } else {
+                try {
+                    await fetch(`${API_URL}/employee/lunch-end`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sessionId: currentSessionId })
+                    });
+                    isOnLunch = false;
+                    btn.textContent = '🍽️ Обед';
+                    btn.classList.remove('btn-success');
+                    btn.classList.add('btn-warning');
+                    showNotification('Обед окончен!');
+                } catch (error) {
+                    showNotification('Ошибка: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // Load tasks
+        async function loadTasks() {
+            try {
+                const response = await fetch(`${API_URL}/employee/tasks/${employeeId}`);
+                const data = await response.json();
+                
+                const taskList = document.getElementById('taskList');
+                if (data.success && data.tasks.length > 0) {
+                    taskList.innerHTML = data.tasks.map(task => 
+                        `<li class="task-item">${task.description}</li>`
+                    ).join('');
+                } else {
+                    taskList.innerHTML = '<li class="task-item">Нет заданий на сегодня</li>';
+                }
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+            }
+        }
+
+        // Timer
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                const now = new Date();
+                const diff = now - workStartTime;
+                const hours = Math.floor(diff / 3600000);
+                const minutes = Math.floor((diff % 3600000) / 60000);
+                const seconds = Math.floor((diff % 60000) / 1000);
+                
+                document.getElementById('workTimer').textContent = 
+                    `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            document.getElementById('workTimer').textContent = '00:00:00';
+        }
+
+        // Photo preview
+        document.getElementById('workPhotos').addEventListener('change', function(e) {
+            const preview = document.getElementById('photoPreview');
+            preview.innerHTML = '';
+            
+            for (let file of e.target.files) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    preview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Notifications
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.style.background = type === 'error' ? '#f5576c' : '#4facfe';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Reminders setup
+        function setupReminders() {
+            // Break reminder: at 50 minutes of each hour (10 minutes before the hour)
+            const checkBreakTime = () => {
+                const now = new Date();
+                if (currentSessionId && !isOnBreak && !isOnLunch) {
+                    // Check if it's 50 minutes past the hour (time for break reminder)
+                    if (now.getMinutes() === 50) {
+                        showNotification('⏰ Через 10 минут перерыв! Приготовьтесь.');
+                    }
+                    // Check if it's 10 minutes past the hour (time to return from break)
+                    if (now.getMinutes() === 10) {
+                        showNotification('✅ Пора приступить к работе после перерыва!');
+                    }
+                }
+            };
+            setInterval(checkBreakTime, 60000); // Check every minute
+
+            // Lunch reminder: 4 hours after work start
+            const checkLunchTime = () => {
+                if (!currentSessionId || !workStartTime || isOnLunch) return;
+                
+                const now = new Date();
+                const hoursWorked = (now - workStartTime) / (1000 * 60 * 60);
+                
+                // Remind about lunch when 4 hours have passed
+                if (hoursWorked >= 4 && hoursWorked < 4.02) {
+                    showNotification('🍽️ Время обеда! Прошло 4 часа с начала работы. Отметьте начало и конец обеда.');
+                }
+            };
+            setInterval(checkLunchTime, 60000); // Check every minute
+        }
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>
