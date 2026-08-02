@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#4CAF50">
+    <meta name="description" content="Приложение для учета рабочего времени сотрудников">
+    <title>WorkTracker - Сотрудник</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    
+    <!-- Стили -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .status-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        
+        .status-active {
+            background: #4CAF50;
+            box-shadow: 0 0 10px #4CAF50;
+        }
+        
+        .status-inactive {
+            background: #f44336;
+        }
+        
+        .timer {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+            margin: 15px 0;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .notification.error {
+            border-left: 4px solid #f44336;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .photo-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .photo-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 1;
+        }
+        
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .break-reminder {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            text-align: center;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .task-card {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        .geo-status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        
+        .geo-ok {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .geo-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <!-- Уведомления -->
+    <div id="notification" class="notification">
+        <span id="notification-text"></span>
+    </div>
+
+    <div class="container">
+        <h1>🕒 WorkTracker</h1>
+        
+        <!-- Форма регистрации/входа -->
+        <div id="auth-form">
+            <div class="form-group">
+                <label for="fullName">ФИО</label>
+                <input type="text" id="fullName" placeholder="Иванов Иван Иванович" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="position">Должность</label>
+                <select id="position" required>
+                    <option value="">Выберите должность</option>
+                    <option value="Электрик">Электрик</option>
+                    <option value="Сантехник">Сантехник</option>
+                    <option value="Строитель">Строитель</option>
+                    <option value="Уборщик">Уборщик</option>
+                    <option value="Охранник">Охранник</option>
+                    <option value="Другое">Другое</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Пароль</label>
+                <input type="password" id="password" placeholder="••••" required minlength="4">
+            </div>
+            
+            <button onclick="registerEmployee()" id="register-btn">Зарегистрироваться</button>
+        </div>
+
+        <!-- Рабочая панель -->
+        <div id="work-panel" class="hidden">
+            <div id="geo-status" class="geo-status geo-error">
+                📍 Определение местоположения...
+            </div>
+            
+            <div class="status-card">
+                <div>
+                    <span class="status-indicator" id="status-indicator"></span>
+                    <span id="status-text">Не активен</span>
+                </div>
+                <div class="timer" id="work-timer">00:00:00</div>
+                <div id="current-task" class="task-card hidden">
+                    <strong>📋 Задание на сегодня:</strong>
+                    <p id="task-description"></p>
+                </div>
+            </div>
+
+            <!-- Напоминание о перерыве -->
+            <div id="break-reminder" class="break-reminder hidden">
+                ⏰ <span id="break-message">Через 10 минут перерыв!</span>
+            </div>
+
+            <div class="form-group" style="margin-top: 20px;">
+                <button onclick="startWork()" id="start-btn">▶️ Начать рабочий день</button>
+                <button onclick="takeBreak()" id="break-btn" class="hidden">☕ Перерыв (10 мин)</button>
+                <button onclick="goToLunch()" id="lunch-btn" class="hidden">🍽 Обед (1 час)</button>
+                <button onclick="endWork()" id="end-btn" class="hidden">⏹ Завершить рабочий день</button>
+            </div>
+
+            <!-- Загрузка фото -->
+            <div id="photo-section" class="hidden">
+                <div class="form-group">
+                    <label>📸 Фото выполненной работы (до 10 шт)</label>
+                    <input type="file" id="photo-input" accept="image/*" multiple onchange="previewPhotos()">
+                    <div class="photo-preview" id="photo-preview"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label>📝 Комментарий к работе</label>
+                    <textarea id="work-comment" rows="3" placeholder="Опишите выполненную работу..."></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Глобальные переменные
+        let employeeId = null;
+        let workDayId = null;
+        let currentLocation = null;
+        let timerInterval = null;
+        let breakTimer = null;
+        let photos = [];
+        const API_URL = 'http://localhost:8080/api';
+
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            registerServiceWorker();
+            requestNotificationPermission();
+            startLocationTracking();
+        });
+
+        // Регистрация Service Worker для PWA
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('SW зарегистрирован:', reg))
+                    .catch(err => console.error('SW ошибка:', err));
+            }
+        }
+
+        // Запрос разрешения на уведомления
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+
+        // Проверка авторизации
+        function checkAuth() {
+            const savedId = localStorage.getItem('employeeId');
+            if (savedId) {
+                employeeId = savedId;
+                showWorkPanel();
+                loadCurrentDay();
+            }
+        }
+
+        // Отслеживание геолокации
+        function startLocationTracking() {
+            if ('geolocation' in navigator) {
+                navigator.geolocation.watchPosition(
+                    (position) => {
+                        currentLocation = {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude
+                        };
+                        updateGeoStatus(true);
+                    },
+                    (error) => {
+                        console.error('Ошибка геолокации:', error);
+                        updateGeoStatus(false, 'Ошибка GPS');
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            } else {
+                updateGeoStatus(false, 'GPS не поддерживается');
+            }
+        }
+
+        // Обновление статуса геозоны
+        function updateGeoStatus(isOk, message = null) {
+            const geoStatus = document.getElementById('geo-status');
+            if (message) {
+                geoStatus.textContent = message;
+                geoStatus.className = 'geo-status geo-error';
+            } else if (isOk) {
+                geoStatus.textContent = '📍 Местоположение определено';
+                geoStatus.className = 'geo-status geo-ok';
+            } else {
+                geoStatus.textContent = '📍 Ожидание GPS...';
+                geoStatus.className = 'geo-status geo-error';
+            }
+        }
+
+        // Регистрация сотрудника
+        async function registerEmployee() {
+            const fullName = document.getElementById('fullName').value.trim();
+            const position = document.getElementById('position').value;
+            const password = document.getElementById('password').value.trim();
+
+            if (!fullName || !position || !password) {
+                showNotification('Заполните все поля', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/employee/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fullName, position, password })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    employeeId = data.id;
+                    localStorage.setItem('employeeId', employeeId);
+                    showNotification('Регистрация успешна!', 'success');
+                    showWorkPanel();
+                } else {
+                    showNotification(data.message || 'Ошибка регистрации', 'error');
+                }
+            } catch (error) {
+                showNotification('Ошибка соединения с сервером', 'error');
+                console.error(error);
+            }
+        }
+
+        // Начало рабочего дня
+        async function startWork() {
+            if (!currentLocation) {
+                showNotification('Ожидание GPS сигнала...', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/employee/start-work?employeeId=${employeeId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentLocation)
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    workDayId = data.id;
+                    localStorage.setItem('workDayId', workDayId);
+                    showNotification('Рабочий день начат!', 'success');
+                    updateUIForWorking();
+                    startTimer();
+                    startBreakReminders();
+                    loadCurrentTask();
+                } else {
+                    showNotification(data.message || 'Ошибка начала работы', 'error');
+                }
+            } catch (error) {
+                showNotification('Ошибка соединения с сервером', 'error');
+                console.error(error);
+            }
+        }
+
+        // Перерыв
+        async function takeBreak() {
+            // Логика перерыва будет добавлена
+            showNotification('Перерыв начался!', 'success');
+        }
+
+        // Обед
+        async function goToLunch() {
+            // Логика обеда будет добавлена
+            showNotification('Обед начался!', 'success');
+        }
+
+        // Завершение работы
+        async function endWork() {
+            if (photos.length === 0) {
+                showNotification('Загрузите хотя бы одно фото', 'error');
+                return;
+            }
+
+            const comment = document.getElementById('work-comment').value.trim();
+
+            try {
+                // Загрузка фото
+                for (const photo of photos) {
+                    const formData = new FormData();
+                    formData.append('file', photo);
+                    
+                    await fetch(`${API_URL}/employee/${workDayId}/photo`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                }
+
+                // Завершение дня
+                const response = await fetch(`${API_URL}/employee/end-work?workDayId=${workDayId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ comment })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showNotification('Рабочий день завершен!', 'success');
+                    resetUI();
+                } else {
+                    showNotification(data.message || 'Ошибка завершения', 'error');
+                }
+            } catch (error) {
+                showNotification('Ошибка соединения с сервером', 'error');
+                console.error(error);
+            }
+        }
+
+        // Предпросмотр фото
+        function previewPhotos() {
+            const input = document.getElementById('photo-input');
+            const preview = document.getElementById('photo-preview');
+            preview.innerHTML = '';
+            photos = [];
+
+            if (input.files.length > 10) {
+                showNotification('Максимум 10 фото', 'error');
+                input.value = '';
+                return;
+            }
+
+            Array.from(input.files).forEach(file => {
+                photos.push(file);
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const div = document.createElement('div');
+                    div.className = 'photo-item';
+                    div.innerHTML = `<img src="${e.target.result}" alt="photo">`;
+                    preview.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Таймер рабочего времени
+        function startTimer() {
+            const startTime = new Date();
+            timerInterval = setInterval(() => {
+                const now = new Date();
+                const diff = now - startTime;
+                const hours = Math.floor(diff / 3600000);
+                const minutes = Math.floor((diff % 3600000) / 60000);
+                const seconds = Math.floor((diff % 60000) / 1000);
+                
+                document.getElementById('work-timer').textContent = 
+                    `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        // Напоминания о перерывах
+        function startBreakReminders() {
+            // Проверка каждую минуту
+            setInterval(() => {
+                const now = new Date();
+                const minutes = now.getMinutes();
+                
+                // В 50 минут - напоминание о перерыве
+                if (minutes === 50) {
+                    showBreakReminder('Через 10 минут перерыв!', 10);
+                    sendNotification('Перерыв через 10 минут', 'Скоро можно будет отдохнуть ☕');
+                }
+                
+                // В 0 минут - пора работать
+                if (minutes === 0) {
+                    showBreakReminder('Пора приступить к работе!', 10);
+                    sendNotification('Перерыв окончен', 'Время работать! 💪');
+                }
+            }, 60000);
+        }
+
+        // Показ напоминания о перерыве
+        function showBreakReminder(message, duration) {
+            const reminder = document.getElementById('break-reminder');
+            const msgElement = document.getElementById('break-message');
+            msgElement.textContent = message;
+            reminder.classList.remove('hidden');
+            
+            setTimeout(() => {
+                reminder.classList.add('hidden');
+            }, duration * 1000);
+        }
+
+        // Отправка push-уведомления
+        function sendNotification(title, body) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(title, {
+                    body: body,
+                    icon: 'icons/icon-192.png',
+                    badge: 'icons/icon-72.png'
+                });
+            }
+        }
+
+        // Загрузка текущего дня
+        async function loadCurrentDay() {
+            // Будет реализовано
+        }
+
+        // Загрузка задания
+        async function loadCurrentTask() {
+            try {
+                const response = await fetch(`${API_URL}/employee/${employeeId}/tasks/today`);
+                const data = await response.json();
+                
+                if (response.ok && data.description) {
+                    document.getElementById('task-description').textContent = data.description;
+                    document.getElementById('current-task').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки задания:', error);
+            }
+        }
+
+        // Обновление UI для工作状态
+        function updateUIForWorking() {
+            document.getElementById('start-btn').classList.add('hidden');
+            document.getElementById('break-btn').classList.remove('hidden');
+            document.getElementById('lunch-btn').classList.remove('hidden');
+            document.getElementById('end-btn').classList.remove('hidden');
+            document.getElementById('photo-section').classList.remove('hidden');
+            document.getElementById('status-indicator').className = 'status-indicator status-active';
+            document.getElementById('status-text').textContent = 'Работает';
+        }
+
+        // Сброс UI
+        function resetUI() {
+            document.getElementById('start-btn').classList.remove('hidden');
+            document.getElementById('break-btn').classList.add('hidden');
+            document.getElementById('lunch-btn').classList.add('hidden');
+            document.getElementById('end-btn').classList.add('hidden');
+            document.getElementById('photo-section').classList.add('hidden');
+            document.getElementById('status-indicator').className = 'status-indicator status-inactive';
+            document.getElementById('status-text').textContent = 'Не активен';
+            document.getElementById('work-timer').textContent = '00:00:00';
+            document.getElementById('photo-input').value = '';
+            document.getElementById('photo-preview').innerHTML = '';
+            document.getElementById('work-comment').value = '';
+            clearInterval(timerInterval);
+            workDayId = null;
+            localStorage.removeItem('workDayId');
+        }
+
+        // Показ рабочей панели
+        function showWorkPanel() {
+            document.getElementById('auth-form').classList.add('hidden');
+            document.getElementById('work-panel').classList.remove('hidden');
+        }
+
+        // Показ уведомления
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const text = document.getElementById('notification-text');
+            text.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
