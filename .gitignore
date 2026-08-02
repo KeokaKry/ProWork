@@ -1,56 +1,54 @@
-```
-# Dependencies
-node_modules/
-.gradle/
+# Compiled and build artifacts
+*.pyc
+__pycache__/
+*.class
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.a
+*.out
+dist/
+build/
 target/
 
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
+# Dependencies
+node_modules/
 venv/
 .venv/
 .env
 .env.local
 .env.*
 
-# Java/Spring Boot
-*.class
-*.jar
-*.war
-*.ear
-*.nar
-build/
-out/
-.DS_Store
-Thumbs.db
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+*.swo
 
-# IDE
+# Editors and IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# Logs
-*.log
+# System files
+.DS_Store
+Thumbs.db
 
 # Coverage
 coverage/
 htmlcov/
 .coverage
 
-# Build artifacts
-dist/
-build/
-*.o
-*.obj
-*.out
-*.exe
-*.dll
-*.so
-*.a
+# Python specific
+.mypy_cache/
+.pytest_cache/
+
+# Java/Gradle
+.gradle/
+target/
 
 # Compressed files
 *.zip
@@ -71,4 +69,7 @@ build/
 *.Z
 *.lz
 *.lzo
-```
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
