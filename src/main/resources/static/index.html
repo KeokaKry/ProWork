@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход в систему</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .notification.error {
+            border-left: 4px solid #f44336;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .work-panel {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .status-card {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .timer {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="notification" class="notification">
+        <span id="notification-text"></span>
+    </div>
+
+    <div class="container">
+        <h1>🕒 WorkTracker</h1>
+        
+        <!-- Форма входа -->
+        <div id="login-form">
+            <div class="form-group">
+                <label for="username">Логин (телефон)</label>
+                <input type="text" id="username" placeholder="+79001234567" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Пароль</label>
+                <input type="password" id="password" placeholder="••••" required minlength="4">
+            </div>
+            
+            <button onclick="login()" id="login-btn">Войти</button>
+        </div>
+
+        <!-- Рабочая панель -->
+        <div id="work-panel" class="hidden work-panel">
+            <div class="status-card">
+                <div id="employee-info"></div>
+                <div class="timer" id="work-timer">00:00:00</div>
+            </div>
+
+            <div class="form-group">
+                <button onclick="startWork()" id="start-btn">▶️ Начать рабочий день</button>
+                <button onclick="endWork()" id="end-btn" class="hidden">⏹ Завершить рабочий день</button>
+            </div>
+            
+            <button onclick="logout()" style="background: #f44336; margin-top: 20px;">Выйти</button>
+        </div>
+    </div>
+
+    <script>
+        let employeeId = null;
+        let workDayId = null;
+        let timerInterval = null;
+        const API_URL = '/api';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+        });
+
+        function checkAuth() {
+            const savedId = localStorage.getItem('employeeId');
+            if (savedId) {
+                employeeId = savedId;
+                showWorkPanel();
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            if (!username || !password) {
+                showNotification('Заполните все поля', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    employeeId = data.id;
+                    localStorage.setItem('employeeId', employeeId);
+                    localStorage.setItem('employeeName', data.fullName);
+                    showNotification('Вход успешен!', 'success');
+                    showWorkPanel();
+                } else {
+                    showNotification(data || 'Ошибка входа', 'error');
+                }
+            } catch (error) {
+                showNotification('Ошибка соединения с сервером', 'error');
+                console.error(error);
+            }
+        }
+
+        function showWorkPanel() {
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('work-panel').classList.remove('hidden');
+            document.getElementById('employee-info').textContent = 
+                'Сотрудник: ' + (localStorage.getItem('employeeName') || '');
+        }
+
+        async function startWork() {
+            const username = document.getElementById('username').value.trim() || localStorage.getItem('employeeUsername');
+            
+            try {
+                const response = await fetch(`${API_URL}/work/start?username=${username}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ latitude: 0, longitude: 0 })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    workDayId = data.id;
+                    localStorage.setItem('workDayId', workDayId);
+                    showNotification('Рабочий день начат!', 'success');
+                    document.getElementById('start-btn').classList.add('hidden');
+                    document.getElementById('end-btn').classList.remove('hidden');
+                    startTimer();
+                } else {
+                    showNotification(data || 'Ошибка начала работы', 'error');
+                }
+            } catch (error) {
+                showNotification('Ошибка соединения с сервером', 'error');
+                console.error(error);
+            }
+        }
+
+        async function endWork() {
+            if (!workDayId) {
+                showNotification('Рабочий день не начат', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/work/finish?workDayId=${workDayId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ comment: '' })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showNotification('Рабочий день завершен!', 'success');
+                    document.getElementById('start-btn').classList.remove('hidden');
+                    document.getElementById('end-btn').classList.add('hidden');
+                    stopTimer();
+                    workDayId = null;
+                    localStorage.removeItem('workDayId');
+                } else {
+                    showNotification(data || 'Ошибка завершения работы', 'error');
+                }
+            } catch (error) {
+                showNotification('Ошибка соединения с сервером', 'error');
+                console.error(error);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('employeeId');
+            localStorage.removeItem('employeeName');
+            localStorage.removeItem('workDayId');
+            employeeId = null;
+            workDayId = null;
+            stopTimer();
+            document.getElementById('login-form').classList.remove('hidden');
+            document.getElementById('work-panel').classList.add('hidden');
+            showNotification('Вы вышли из системы', 'success');
+        }
+
+        function startTimer() {
+            let seconds = 0;
+            timerInterval = setInterval(() => {
+                seconds++;
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const secs = seconds % 60;
+                document.getElementById('work-timer').textContent = 
+                    `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            document.getElementById('work-timer').textContent = '00:00:00';
+        }
+
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            const text = document.getElementById('notification-text');
+            text.textContent = message;
+            notification.className = `notification ${type} show`;
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

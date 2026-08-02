@@ -6,39 +6,63 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-// @RestController означает, что этот класс будет отвечать на HTTP-запросы (из браузера или мобильного приложения)
-// и возвращать данные в формате JSON.
+/**
+ * Контроллер для админ-панели.
+ * Управление сотрудниками доступно только через админ-панель.
+ */
 @RestController
-// @RequestMapping задает базовый адрес для всех методов внутри этого класса
-@RequestMapping("/api/employees")
+@RequestMapping("/api/admin/employees")
 public class EmployeeController {
 
     private final EmployeeRepository employeeRepository;
 
-    // Мы "внедряем" (внедрение зависимостей / Dependency Injection) наш репозиторий через конструктор.
-    // Это правильный и безопасный способ в Spring.
     public EmployeeController(EmployeeRepository employeeRepository) {
         this.employeeRepository = employeeRepository;
-        // Для теста: если база пустая, создадим одного сотрудника при запуске
-        if (employeeRepository.count() == 0) {
-            Employee testEmp = new Employee();
-            testEmp.setFullName("Иванов Иван Иванович");
-            testEmp.setPosition("Электрик");
-            testEmp.setHourlyRate(500.0);
-            testEmp.setPhoneNumber("+79001234567");
-            employeeRepository.save(testEmp);
-        }
     }
 
-    // @GetMapping означает, что этот метод сработает при GET-запросе по адресу /api/employees
+    /**
+     * Получить всех сотрудников (только для админа)
+     */
     @GetMapping
     public List<Employee> getAllEmployees() {
-        return employeeRepository.findAll(); // Достаем всех из базы
+        return employeeRepository.findAll();
     }
 
-    // @PostMapping означает, что этот метод сработает при POST-запросе (когда приложение присылает новые данные)
+    /**
+     * Создать нового сотрудника (только через админ-панель)
+     */
     @PostMapping
     public Employee createEmployee(@RequestBody Employee employee) {
-        return employeeRepository.save(employee); // Сохраняем в базу и возвращаем обратно с присвоенным ID
+        // Проверяем, не занят ли username
+        if (employeeRepository.findByUsername(employee.getUsername()).isPresent()) {
+            throw new IllegalStateException("Пользователь с таким логином уже существует");
+        }
+        return employeeRepository.save(employee);
+    }
+
+    /**
+     * Обновить сотрудника (только для админа)
+     */
+    @PutMapping("/{id}")
+    public Employee updateEmployee(@PathVariable Long id, @RequestBody Employee employeeDetails) {
+        Employee employee = employeeRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Сотрудник не найден"));
+        
+        employee.setFullName(employeeDetails.getFullName());
+        employee.setPosition(employeeDetails.getPosition());
+        employee.setHourlyRate(employeeDetails.getHourlyRate());
+        employee.setPhoneNumber(employeeDetails.getPhoneNumber());
+        employee.setUsername(employeeDetails.getUsername());
+        employee.setPassword(employeeDetails.getPassword());
+        
+        return employeeRepository.save(employee);
+    }
+
+    /**
+     * Удалить сотрудника (только для админа)
+     */
+    @DeleteMapping("/{id}")
+    public void deleteEmployee(@PathVariable Long id) {
+        employeeRepository.deleteById(id);
     }
 }
