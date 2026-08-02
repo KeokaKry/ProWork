@@ -8,7 +8,7 @@ import java.util.Optional;
 
 /**
  * Репозиторий для работы с сотрудниками.
- * Предоставляет методы для поиска сотрудников по телефону и username.
+ * Предоставляет методы для поиска сотрудников по телефону, username и ФИО.
  */
 @Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
@@ -22,4 +22,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
      * Поиск сотрудника по username (логину)
      */
     Optional<Employee> findByUsername(String username);
+    
+    /**
+     * Поиск сотрудника по ФИО
+     */
+    Optional<Employee> findByFullName(String fullName);
 }

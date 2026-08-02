@@ -14,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 
 /**
  * Контроллер для работы с сотрудниками.
- * Обрабатывает запросы на регистрацию, начало/конец рабочего дня, загрузку фото.
+ * Обрабатывает запросы на вход, начало/конец рабочего дня, загрузку фото.
  */
 @RestController
 @RequestMapping("/api")
@@ -61,29 +61,39 @@ public class WorkController {
     }
 
     /**
-     * Регистрация нового сотрудника
-     * POST /api/register
+     * Вход сотрудника по ФИО и паролю
+     * POST /api/login
      */
-    @PostMapping("/register")
-    public ResponseEntity<?> registerEmployee(@Valid @RequestBody RegisterRequest request) {
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
-            // Проверяем, не занят ли username (телефон)
-            if (employeeRepository.findByUsername(request.getUsername()).isPresent()) {
-                return ResponseEntity.badRequest().body("Такой пользователь уже существует");
+            // Проверяем, что переданы ФИО и пароль
+            if (request.getFullName() == null || request.getFullName().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Введите ФИО");
+            }
+            if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Введите пароль");
             }
 
-            Employee employee = new Employee();
-            employee.setFullName(request.getFullName());
-            employee.setPosition(request.getPosition());
-            employee.setUsername(request.getUsername());
-            employee.setPassword(request.getPassword()); // В реальном проекте нужно хешировать!
-            employee.setHourlyRate(0.0); // По умолчанию 0, администратор установит позже
+            // Находим сотрудника по ФИО
+            Employee employee = employeeRepository.findByFullName(request.getFullName())
+                .orElseThrow(() -> new RuntimeException("Сотрудник с таким ФИО не найден"));
 
-            Employee savedEmployee = employeeRepository.save(employee);
-            
-            return ResponseEntity.ok(savedEmployee);
+            // Проверяем пароль
+            if (!employee.getPassword().equals(request.getPassword())) {
+                return ResponseEntity.badRequest().body("Неверный пароль");
+            }
+
+            // Возвращаем информацию о сотруднике
+            LoginResponse response = new LoginResponse();
+            response.setId(employee.getId());
+            response.setUsername(employee.getUsername());
+            response.setFullName(employee.getFullName());
+            response.setPosition(employee.getPosition());
+
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Ошибка регистрации: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -279,5 +289,44 @@ public class WorkController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Ошибка сервера: " + e.getMessage());
         }
+    }
+
+    /**
+     * Получить список всех сотрудников для выбора при входе
+     * GET /api/employees/list
+     */
+    @GetMapping("/employees/list")
+    public ResponseEntity<?> getEmployeesList() {
+        try {
+            List<Employee> employees = employeeRepository.findAll();
+            
+            // Возвращаем только необходимую информацию (id и ФИО)
+            List<EmployeeInfo> employeeInfos = employees.stream()
+                .map(e -> new EmployeeInfo(e.getId(), e.getFullName(), e.getPosition()))
+                .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(employeeInfos);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Ошибка сервера: " + e.getMessage());
+        }
+    }
+
+    /**
+     * DTO для информации о сотруднике в списке
+     */
+    public static class EmployeeInfo {
+        private final Long id;
+        private final String fullName;
+        private final String position;
+
+        public EmployeeInfo(Long id, String fullName, String position) {
+            this.id = id;
+            this.fullName = fullName;
+            this.position = position;
+        }
+
+        public Long getId() { return id; }
+        public String getFullName() { return fullName; }
+        public String getPosition() { return position; }
     }
 }
