@@ -38,6 +38,30 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeRepository.save(employee));
     }
     
+    // Обновить сотрудника (назначить должность, изменить пароль)
+    @PutMapping("/{id}")
+    public ResponseEntity<Employee> updateEmployee(@PathVariable Long id, @RequestBody Map<String, Object> updates) {
+        return employeeRepository.findById(id)
+            .map(employee -> {
+                if (updates.containsKey("fullName")) {
+                    employee.setFullName((String) updates.get("fullName"));
+                }
+                if (updates.containsKey("phone")) {
+                    employee.setPhone((String) updates.get("phone"));
+                }
+                if (updates.containsKey("password")) {
+                    employee.setPassword((String) updates.get("password"));
+                }
+                if (updates.containsKey("positionId")) {
+                    Long positionId = Long.valueOf(updates.get("positionId").toString());
+                    positionRepository.findById(positionId).ifPresent(employee::setPosition);
+                }
+                return ResponseEntity.ok(employeeRepository.save(employee));
+            })
+            .orElse(ResponseEntity.notFound().build());
+    }
+    
+    // Уволить сотрудника (удаление)
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEmployee(@PathVariable Long id) {
         employeeRepository.deleteById(id);

@@ -25,6 +25,14 @@ public class Employee {
     @JoinColumn(name = "position_id")
     private Position position;
 
+    @ManyToMany
+    @JoinTable(
+        name = "employee_geo_zones",
+        joinColumns = @JoinColumn(name = "employee_id"),
+        inverseJoinColumns = @JoinColumn(name = "geo_zone_id")
+    )
+    private List<GeoZone> geoZones;
+
     private Double startLatitude;
     private Double startLongitude;
 
