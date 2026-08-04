@@ -5,16 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вход сотрудника</title>
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; margin: 0; }
-        .card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 300px; }
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f0f2f5; margin: 0; }
+        .card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 350px; }
+        .full-card { max-width: 600px; width: 90%; }
         h2 { text-align: center; color: #333; }
         label { display: block; margin-top: 10px; font-weight: bold; }
-        select, input, button { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        select, input, button, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
         button { background: #007bff; color: white; border: none; cursor: pointer; margin-top: 20px; font-size: 16px; }
         button:hover { background: #0056b3; }
+        button.danger { background: #dc3545; }
+        button.danger:hover { background: #c82333; }
+        button.success { background: #28a745; }
+        button.success:hover { background: #218838; }
         .error { color: red; font-size: 14px; text-align: center; margin-top: 10px; display: none; }
         #workPanel { display: none; text-align: center; }
         .status-badge { display: inline-block; padding: 5px 10px; background: #e2e6ea; border-radius: 15px; font-size: 12px; margin-bottom: 15px; }
+        .task-box { background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: left; }
+        .geo-status { font-size: 12px; color: #666; margin: 10px 0; }
+        .notification { position: fixed; top: 20px; right: 20px; background: #ffc107; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); display: none; z-index: 1000; }
+        .photo-preview { max-width: 100%; max-height: 300px; border-radius: 8px; margin: 10px 0; }
+        .history-item { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 8px; text-align: left; }
+        .nav-tabs { display: flex; margin-bottom: 15px; }
+        .nav-tab { flex: 1; padding: 10px; background: #e9ecef; border: none; cursor: pointer; margin: 0 2px; border-radius: 4px; }
+        .nav-tab.active { background: #007bff; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
     </style>
 </head>
 <body>
@@ -36,14 +51,51 @@
     </div>
 </div>
 
-<div class="card" id="workPanel">
+<div class="card full-card" id="workPanel">
     <h2 id="welcomeText"></h2>
     <div id="statusBadge" class="status-badge">Статус: Не активен</div>
-    <p id="geoStatus" style="font-size:12px; color:#666;">Геолокация: ожидание...</p>
+    <p id="geoStatus" class="geo-status">Геолокация: ожидание...</p>
     
-    <button id="actionBtn" onclick="toggleWork()">Начать смену</button>
+    <div class="nav-tabs">
+        <button class="nav-tab active" onclick="showWorkTab('main')">Смена</button>
+        <button class="nav-tab" onclick="showWorkTab('task')">Задание</button>
+        <button class="nav-tab" onclick="showWorkTab('report')">Отчет</button>
+        <button class="nav-tab" onclick="showWorkTab('history')">История</button>
+    </div>
+    
+    <!-- Вкладка Основная -->
+    <div id="tab-main" class="tab-content active">
+        <p id="workTimer" style="font-size: 14px; color: #666;"></p>
+        <button id="actionBtn" onclick="toggleWork()">Начать смену</button>
+    </div>
+    
+    <!-- Вкладка Задание -->
+    <div id="tab-task" class="tab-content">
+        <div class="task-box">
+            <h3>Ваше задание на день:</h3>
+            <p id="dailyTask">Задание не назначено</p>
+        </div>
+    </div>
+    
+    <!-- Вкладка Отчет -->
+    <div id="tab-report" class="tab-content">
+        <h3>Фотоотчет о работе</h3>
+        <p style="font-size:12px; color:#666;">Сделайте фотографию выполненной работы</p>
+        <input type="file" id="reportPhoto" accept="image/*" capture="camera">
+        <img id="photoPreview" class="photo-preview" style="display:none;">
+        <button class="success" onclick="uploadReport()" id="uploadBtn" style="display:none;">Отправить отчет</button>
+    </div>
+    
+    <!-- Вкладка История -->
+    <div id="tab-history" class="tab-content">
+        <h3>История смен</h3>
+        <div id="historyList"></div>
+    </div>
+    
     <button onclick="logout()" style="background:#6c757d; margin-top:10px;">Выйти</button>
 </div>
+
+<div id="notification" class="notification"></div>
 
 <script>
     let currentUser = null;
@@ -51,6 +103,9 @@
     let isWorking = false;
     let userLat = null;
     let userLon = null;
+    let breakNotificationShown = false;
+    let lunchNotificationShown = false;
+    let notificationInterval = null;
 
     // Загрузка списка сотрудников при старте
     window.onload = async () => {
@@ -74,10 +129,10 @@
             navigator.geolocation.watchPosition(pos => {
                 userLat = pos.coords.latitude;
                 userLon = pos.coords.longitude;
-                document.getElementById('geoStatus').textContent = `Geo: ${userLat.toFixed(4)}, ${userLon.toFixed(4)}`;
+                document.getElementById('geoStatus').textContent = `Geo: ${userLat.toFixed(6)}, ${userLon.toFixed(6)}`;
             }, err => {
                 document.getElementById('geoStatus').textContent = "Ошибка GPS: " + err.message;
-            });
+            }, { enableHighAccuracy: true, timeout: 10000 });
         }
     };
 
@@ -117,22 +172,82 @@
         document.getElementById('workPanel').style.display = 'block';
         document.getElementById('welcomeText').textContent = `Привет, ${currentUser.fullName}`;
         checkActiveWork();
+        loadDailyTask();
+    }
+
+    function showWorkTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabName).classList.add('active');
+        event.target.classList.add('active');
+        
+        if (tabName === 'history') {
+            loadHistory();
+        }
     }
 
     async function checkActiveWork() {
-        // Упрощенно: проверяем историю, последняя запись активна?
-        // В реальном проекте лучше отдельный эндпоинт статуса
-        const res = await fetch(`/api/work/history/${currentUser.id}`);
-        const records = await res.json();
-        const active = records.find(r => r.status === 'ACTIVE');
+        const res = await fetch(`/api/work/active/${currentUser.id}`);
+        const data = await res.json();
         
-        if (active) {
+        if (data && data.id) {
             isWorking = true;
-            currentWorkId = active.id;
+            currentWorkId = data.id;
             updateUI(true);
+            startNotificationChecker();
+            startTimer(data.startTime);
         } else {
             updateUI(false);
         }
+    }
+
+    function startTimer(startTimeStr) {
+        const startTime = new Date(startTimeStr);
+        setInterval(() => {
+            const now = new Date();
+            const diff = Math.floor((now - startTime) / 1000);
+            const hours = Math.floor(diff / 3600);
+            const minutes = Math.floor((diff % 3600) / 60);
+            const seconds = diff % 60;
+            document.getElementById('workTimer').textContent = 
+                `Время работы: ${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+        }, 1000);
+    }
+
+    function startNotificationChecker() {
+        // Проверка уведомлений каждые 30 секунд
+        notificationInterval = setInterval(async () => {
+            try {
+                const res = await fetch(`/api/notifications/check-break/${currentUser.id}`);
+                const data = await res.json();
+                
+                if (data.notify) {
+                    showNotification(data.message);
+                    
+                    // Сброс флагов для повторных уведомлений
+                    if (data.type === 'LUNCH_START') lunchNotificationShown = false;
+                    if (data.type === 'SHORT_BREAK_START') breakNotificationShown = false;
+                }
+            } catch (e) {
+                console.error("Ошибка проверки уведомлений", e);
+            }
+        }, 30000);
+    }
+
+    function showNotification(message) {
+        const notif = document.getElementById('notification');
+        notif.textContent = message;
+        notif.style.display = 'block';
+        
+        // Воспроизведение звука уведомления (если поддерживается)
+        try {
+            const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAAA=');
+            audio.play().catch(e => {});
+        } catch(e) {}
+        
+        setTimeout(() => {
+            notif.style.display = 'none';
+        }, 10000);
     }
 
     function updateUI(working) {
@@ -140,13 +255,13 @@
         const badge = document.getElementById('statusBadge');
         if (working) {
             btn.textContent = "Завершить смену";
-            btn.style.background = "#dc3545";
+            btn.className = "danger";
             badge.textContent = "Статус: Работает";
             badge.style.background = "#d4edda";
             badge.style.color = "#155724";
         } else {
             btn.textContent = "Начать смену";
-            btn.style.background = "#28a745";
+            btn.className = "success";
             badge.textContent = "Статус: Не активен";
             badge.style.background = "#e2e6ea";
             badge.style.color = "#333";
@@ -170,6 +285,8 @@
                 isWorking = false;
                 currentWorkId = null;
                 updateUI(false);
+                clearInterval(notificationInterval);
+                document.getElementById('workTimer').textContent = '';
                 alert("Смена завершена!");
             }
         } else {
@@ -184,7 +301,112 @@
                 isWorking = true;
                 currentWorkId = data.id;
                 updateUI(true);
+                startNotificationChecker();
+                startTimer(new Date().toISOString());
             }
+        }
+    }
+
+    async function loadDailyTask() {
+        try {
+            const res = await fetch(`/api/tasks/employee/${currentUser.id}`);
+            const tasks = await res.json();
+            
+            // Найти последнее задание
+            if (tasks.length > 0) {
+                const lastTask = tasks[tasks.length - 1];
+                if (lastTask.dailyTask) {
+                    document.getElementById('dailyTask').textContent = lastTask.dailyTask;
+                }
+            }
+        } catch (e) {
+            console.error("Ошибка загрузки задания", e);
+        }
+    }
+
+    // Обработка выбора фото
+    document.getElementById('reportPhoto').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById('photoPreview');
+                img.src = e.target.result;
+                img.style.display = 'block';
+                document.getElementById('uploadBtn').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    async function uploadReport() {
+        if (!currentWorkId) {
+            alert("Сначала начните смену");
+            return;
+        }
+        
+        const fileInput = document.getElementById('reportPhoto');
+        if (!fileInput.files[0]) {
+            alert("Выберите фото");
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('photo', fileInput.files[0]);
+        
+        try {
+            const res = await fetch(`/api/reports/${currentWorkId}/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (res.ok) {
+                alert("Фотоотчет успешно отправлен!");
+                fileInput.value = '';
+                document.getElementById('photoPreview').style.display = 'none';
+                document.getElementById('uploadBtn').style.display = 'none';
+            } else {
+                alert("Ошибка загрузки: " + await res.text());
+            }
+        } catch (e) {
+            alert("Ошибка соединения");
+        }
+    }
+
+    async function loadHistory() {
+        try {
+            const res = await fetch(`/api/work/history/${currentUser.id}`);
+            const records = await res.json();
+            const list = document.getElementById('historyList');
+            list.innerHTML = '';
+            
+            if (records.length === 0) {
+                list.innerHTML = '<p>История пуста</p>';
+                return;
+            }
+            
+            records.slice().reverse().forEach(r => {
+                let duration = '-';
+                if (r.startTime && r.endTime) {
+                    const start = new Date(r.startTime);
+                    const end = new Date(r.endTime);
+                    const diffMs = end - start;
+                    const hours = Math.floor(diffMs / 3600000);
+                    const minutes = Math.floor((diffMs % 3600000) / 60000);
+                    duration = `${hours}ч ${minutes}мин`;
+                }
+                
+                list.innerHTML += `<div class="history-item">
+                    <strong>${new Date(r.startTime).toLocaleDateString()}</strong><br>
+                    Начало: ${r.startTime ? new Date(r.startTime).toLocaleTimeString() : '-'}<br>
+                    Конец: ${r.endTime ? new Date(r.endTime).toLocaleTimeString() : '-'}<br>
+                    Длительность: ${duration}<br>
+                    Статус: ${r.status}
+                    ${r.reportPhotoUrl ? '<br>📷 Фотоотчет загружен' : ''}
+                </div>`;
+            });
+        } catch (e) {
+            console.error("Ошибка загрузки истории", e);
         }
     }
 
