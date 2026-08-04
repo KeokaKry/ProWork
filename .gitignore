@@ -1,49 +1,17 @@
 ```
-# Compiled Java classes
+# Compiled and build artifacts
 *.class
-
-# Maven build directory
 target/
-
-# IDE files
-.vscode/
-.idea/
-*.iml
-*.ipr
-*.iws
-
-# Logs
+# Dependencies
+# Logs and temp files
 *.log
-
-# Environment files
+*.tmp
+*.swp
+# Environment
 .env
 .env.local
 *.env.*
-
-# Temporary files
-*.tmp
-*.swp
-*.swo
-
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# Coverage reports
-coverage/
-htmlcov/
-*.coverage
-
-# Python cache (if any Python files exist in project)
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# Node.js (if any JS files exist in project)
-node_modules/
-
-# Virtual environments (if any Python files exist in project)
-venv/
-.venv/
+# Editors
+.vscode/
+.idea/
 ```

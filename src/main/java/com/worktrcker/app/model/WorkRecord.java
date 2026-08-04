@@ -3,6 +3,7 @@ package com.worktrcker.app.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Data
@@ -14,6 +15,7 @@ public class WorkRecord {
 
     @ManyToOne
     @JoinColumn(name = "employee_id")
+    @JsonIgnore
     private Employee employee;
 
     private LocalDateTime startTime;

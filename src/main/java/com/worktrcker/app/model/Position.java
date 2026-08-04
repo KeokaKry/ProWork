@@ -3,6 +3,7 @@ package com.worktrcker.app.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Data
@@ -19,5 +20,6 @@ public class Position {
     private Double hourlyRate;
 
     @OneToMany(mappedBy = "position")
+    @JsonIgnore
     private List<Employee> employees;
 }
