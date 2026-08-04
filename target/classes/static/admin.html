@@ -9,16 +9,28 @@
         header { background: #343a40; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; }
         nav button { background: none; border: none; color: #ccc; font-size: 16px; cursor: pointer; margin-left: 15px; }
         nav button.active { color: white; font-weight: bold; border-bottom: 2px solid white; }
-        .container { max-width: 1000px; margin: 20px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .container { max-width: 1200px; margin: 20px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background: #f8f9fa; }
-        input, select, button { padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; }
+        input, select, button, textarea { padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; }
         button.primary { background: #007bff; color: white; border: none; cursor: pointer; }
+        button.success { background: #28a745; color: white; border: none; cursor: pointer; }
         button.danger { background: #dc3545; color: white; border: none; cursor: pointer; }
+        button.warning { background: #ffc107; color: #333; border: none; cursor: pointer; }
         .form-group { margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+        .geo-zone-item { background: #f8f9fa; padding: 10px; margin: 5px 0; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+        .task-section { background: #e3f2fd; padding: 15px; border-radius: 8px; margin-top: 15px; }
+        .report-photo { max-width: 200px; max-height: 200px; object-fit: cover; border-radius: 4px; }
+        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; }
+        .status-active { background: #d4edda; color: #155724; }
+        .status-completed { background: #cce5ff; color: #004085; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        #map { position: relative; background: #e9ecef; overflow: hidden; }
+        .map-marker { position: absolute; width: 20px; height: 20px; background: #007bff; border: 3px solid white; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .map-circle { position: absolute; border: 2px solid #007bff; background: rgba(0, 123, 255, 0.2); border-radius: 50%; transform: translate(-50%, -50%); }
     </style>
 </head>
 <body>
@@ -26,69 +38,338 @@
 <header>
     <h1>Админ Панель</h1>
     <nav>
-        <button onclick="showTab('employees')" class="active" id="btn-employees">Сотрудники</button>
         <button onclick="showTab('positions')" id="btn-positions">Должности</button>
+        <button onclick="showTab('employees')" id="btn-employees">Сотрудники</button>
+        <button onclick="showTab('geozones')" id="btn-geozones">Геозоны</button>
+        <button onclick="showTab('tasks')" id="btn-tasks">Задания</button>
         <button onclick="showTab('reports')" id="btn-reports">Отчеты</button>
     </nav>
 </header>
 
 <div class="container">
+    <!-- Вкладка Должности -->
+    <div id="positions" class="tab-content">
+        <h2>Управление должностями</h2>
+        <div class="form-group">
+            <h3>Добавить/Редактировать должность</h3>
+            <input type="hidden" id="posId">
+            <input type="text" id="posName" placeholder="Название должности" style="width: 300px;">
+            <input type="number" id="posRate" placeholder="Ставка в час" style="width: 150px;">
+            <button class="primary" onclick="savePosition()">Сохранить</button>
+            <button onclick="clearPosForm()" style="background:#6c757d; color:white; border:none;">Очистить</button>
+        </div>
+        <table>
+            <thead><tr><th>Название</th><th>Ставка (руб/час)</th><th>Действия</th></tr></thead>
+            <tbody id="posTable"></tbody>
+        </table>
+    </div>
+
     <!-- Вкладка Сотрудники -->
-    <div id="employees" class="tab-content active">
+    <div id="employees" class="tab-content">
         <h2>Управление сотрудниками</h2>
         <div class="form-group">
             <h3>Добавить сотрудника</h3>
-            <input type="text" id="empName" placeholder="ФИО">
-            <input type="text" id="empPhone" placeholder="Телефон">
-            <input type="text" id="empPass" placeholder="Пароль">
-            <select id="empPosition">
+            <input type="text" id="empName" placeholder="ФИО" style="width: 250px;">
+            <input type="text" id="empPhone" placeholder="Телефон" style="width: 150px;">
+            <input type="text" id="empPass" placeholder="Пароль для входа" style="width: 150px;">
+            <select id="empPosition" style="width: 200px;">
                 <option value="">Выберите должность</option>
             </select>
             <br>
-            <button class="primary" onclick="addEmployee()">Создать</button>
+            <button class="success" onclick="addEmployee()">Создать</button>
         </div>
+        <h3>Список сотрудников</h3>
         <table>
-            <thead><tr><th>ФИО</th><th>Телефон</th><th>Должность</th><th>Действия</th></tr></thead>
+            <thead><tr><th>ФИО</th><th>Телефон</th><th>Должность</th><th>Пароль</th><th>Геозоны</th><th>Действия</th></tr></thead>
             <tbody id="empTable"></tbody>
         </table>
     </div>
 
-    <!-- Вкладка Должности -->
-    <div id="positions" class="tab-content">
-        <h2>Должности и тарифы</h2>
+    <!-- Вкладка Геозоны -->
+    <div id="geozones" class="tab-content">
+        <h2>Управление геозонами</h2>
         <div class="form-group">
-            <h3>Новая должность</h3>
-            <input type="text" id="posName" placeholder="Название должности">
-            <input type="number" id="posRate" placeholder="Ставка в час">
-            <button class="primary" onclick="addPosition()">Добавить</button>
+            <h3>Добавить/Редактировать геозону</h3>
+            <input type="hidden" id="zoneId">
+            <input type="text" id="zoneName" placeholder="Название геозоны" style="width: 200px;">
+            <br>
+            <div style="margin: 10px 0;">
+                <label>Координаты и радиус:</label><br>
+                <input type="number" step="any" id="zoneLat" placeholder="Широта" style="width: 120px;">
+                <input type="number" step="any" id="zoneLon" placeholder="Долгота" style="width: 120px;">
+                <input type="number" step="any" id="zoneRadius" placeholder="Радиус (м)" style="width: 100px;">
+            </div>
+            <div id="map" style="height: 400px; width: 100%; border: 1px solid #ddd; margin: 10px 0;"></div>
+            <p style="font-size: 12px; color: #666;">Кликните на карту для установки центра. Используйте ползунок для изменения радиуса.</p>
+            <input type="range" id="radiusSlider" min="10" max="5000" value="500" style="width: 300px;">
+            <span id="radiusValue">500 м</span>
+            <br>
+            <button class="primary" onclick="saveGeoZone()">Сохранить</button>
+            <button onclick="clearZoneForm()" style="background:#6c757d; color:white; border:none;">Очистить</button>
         </div>
+        <h3>Список геозон</h3>
+        <div id="geoZonesList"></div>
+        
+        <div class="form-group" style="margin-top: 20px;">
+            <h3>Назначить геозону сотруднику</h3>
+            <select id="assignZoneSelect" style="width: 250px;">
+                <option value="">Выберите геозону</option>
+            </select>
+            <select id="assignEmpSelect" style="width: 250px;">
+                <option value="">Выберите сотрудника</option>
+            </select>
+            <button class="success" onclick="assignGeoZone()">Назначить</button>
+        </div>
+    </div>
+
+    <!-- Вкладка Задания -->
+    <div id="tasks" class="tab-content">
+        <h2>Задания на день</h2>
+        <div class="task-section">
+            <h3>Назначить задание сотруднику</h3>
+            <select id="taskEmpSelect" style="width: 300px;">
+                <option value="">Выберите сотрудника</option>
+            </select>
+            <br>
+            <textarea id="taskText" placeholder="Описание задания на день" rows="4" style="width: 100%; margin-top: 10px;"></textarea>
+            <br>
+            <button class="primary" onclick="assignTask()" style="margin-top: 10px;">Назначить задание</button>
+        </div>
+        <h3>Текущие задания</h3>
         <table>
-            <thead><tr><th>Название</th><th>Ставка</th><th>Действия</th></tr></thead>
-            <tbody id="posTable"></tbody>
+            <thead><tr><th>Сотрудник</th><th>Задание</th><th>Статус</th><th>Начало</th><th>Конец</th></tr></thead>
+            <tbody id="taskTable"></tbody>
         </table>
     </div>
 
     <!-- Вкладка Отчеты -->
     <div id="reports" class="tab-content">
-        <h2>Отчет по всем сменам</h2>
+        <h2>Отчеты по сменам</h2>
         <button class="primary" onclick="loadReports()">Обновить</button>
         <table>
-            <thead><tr><th>Сотрудник</th><th>Начало</th><th>Конец</th><th>Статус</th></tr></thead>
+            <thead><tr><th>Сотрудник</th><th>Задание</th><th>Начало</th><th>Конец</th><th>Длительность</th><th>Фотоотчет</th><th>Статус</th></tr></thead>
             <tbody id="reportTable"></tbody>
         </table>
     </div>
 </div>
 
 <script>
+    // Карта и геозоны
+    let map = null;
+    let mapCenter = { lat: 55.751244, lon: 37.618423 }; // Москва по умолчанию
+    let mapRadius = 500;
+    let mapMarker = null;
+    let mapCircle = null;
+    let isDragging = false;
+
+    function initMap() {
+        const mapEl = document.getElementById('map');
+        if (!mapEl) return;
+        
+        updateMapVisual();
+        
+        // Обработка клика для установки центра
+        mapEl.addEventListener('click', function(e) {
+            const rect = mapEl.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const coords = pixelToCoords(x, y);
+            document.getElementById('zoneLat').value = coords.lat.toFixed(6);
+            document.getElementById('zoneLon').value = coords.lon.toFixed(6);
+            
+            updateMapVisual();
+        });
+        
+        // Ползунок радиуса
+        const slider = document.getElementById('radiusSlider');
+        slider.addEventListener('input', function() {
+            mapRadius = parseInt(this.value);
+            document.getElementById('radiusValue').textContent = mapRadius + ' м';
+            document.getElementById('zoneRadius').value = mapRadius;
+            updateMapVisual();
+        });
+        
+        // Синхронизация полей с картой
+        ['zoneLat', 'zoneLon', 'zoneRadius'].forEach(id => {
+            document.getElementById(id).addEventListener('input', function() {
+                if (id === 'zoneLat' || id === 'zoneLon') {
+                    const lat = parseFloat(document.getElementById('zoneLat').value) || mapCenter.lat;
+                    const lon = parseFloat(document.getElementById('zoneLon').value) || mapCenter.lon;
+                    mapCenter = { lat, lon };
+                } else if (id === 'zoneRadius') {
+                    mapRadius = parseFloat(document.getElementById('zoneRadius').value) || 500;
+                    document.getElementById('radiusSlider').value = mapRadius;
+                    document.getElementById('radiusValue').textContent = mapRadius + ' м';
+                }
+                updateMapVisual();
+            });
+        });
+    }
+
+    function coordsToPixel(lat, lon) {
+        const mapEl = document.getElementById('map');
+        const width = mapEl.clientWidth;
+        const height = mapEl.clientHeight;
+        
+        // Простая проекция для отображения
+        const minLat = 54.0;
+        const maxLat = 57.0;
+        const minLon = 36.0;
+        const maxLon = 39.0;
+        
+        const x = ((lon - minLon) / (maxLon - minLon)) * width;
+        const y = ((maxLat - lat) / (maxLat - minLat)) * height;
+        
+        return { x, y };
+    }
+
+    function pixelToCoords(x, y) {
+        const mapEl = document.getElementById('map');
+        const width = mapEl.clientWidth;
+        const height = mapEl.clientHeight;
+        
+        const minLat = 54.0;
+        const maxLat = 57.0;
+        const minLon = 36.0;
+        const maxLon = 39.0;
+        
+        const lon = (x / width) * (maxLon - minLon) + minLon;
+        const lat = maxLat - (y / height) * (maxLat - minLat);
+        
+        return { lat, lon };
+    }
+
+    function updateMapVisual() {
+        const mapEl = document.getElementById('map');
+        if (!mapEl) return;
+        
+        // Очистка старых элементов
+        const old = mapEl.querySelectorAll('.map-marker, .map-circle');
+        old.forEach(el => el.remove());
+        
+        const center = document.getElementById('zoneLat').value && document.getElementById('zoneLon').value ? 
+            { lat: parseFloat(document.getElementById('zoneLat').value), lon: parseFloat(document.getElementById('zoneLon').value) } : 
+            mapCenter;
+        
+        const radius = parseFloat(document.getElementById('zoneRadius').value) || mapRadius;
+        
+        const pos = coordsToPixel(center.lat, center.lon);
+        
+        // Маркер центра
+        const marker = document.createElement('div');
+        marker.className = 'map-marker';
+        marker.style.left = pos.x + 'px';
+        marker.style.top = pos.y + 'px';
+        mapEl.appendChild(marker);
+        
+        // Круг радиуса
+        const circle = document.createElement('div');
+        circle.className = 'map-circle';
+        const radiusPixels = Math.min(200, (radius / 5000) * Math.min(mapEl.clientWidth, mapEl.clientHeight));
+        circle.style.width = (radiusPixels * 2) + 'px';
+        circle.style.height = (radiusPixels * 2) + 'px';
+        circle.style.left = pos.x + 'px';
+        circle.style.top = pos.y + 'px';
+        mapEl.appendChild(circle);
+        
+        // Сетка координат
+        renderMapGrid();
+    }
+
+    function renderMapGrid() {
+        const mapEl = document.getElementById('map');
+        let grid = mapEl.querySelector('.map-grid');
+        if (!grid) {
+            grid = document.createElement('div');
+            grid.className = 'map-grid';
+            grid.style.cssText = 'position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none;';
+            mapEl.appendChild(grid);
+        }
+        
+        const lines = [];
+        for (let lat = 54.5; lat < 57; lat += 0.5) {
+            const pos = coordsToPixel(lat, 37.5);
+            lines.push(`<div style="position: absolute; left: 0; right: 0; top: ${pos.y}px; border-top: 1px dashed #ccc; font-size: 10px; color: #999;">${lat.toFixed(1)}°</div>`);
+        }
+        for (let lon = 36.5; lon < 39; lon += 0.5) {
+            const pos = coordsToPixel(55.5, lon);
+            lines.push(`<div style="position: absolute; top: 10px; bottom: 10px; left: ${pos.x}px; border-left: 1px dashed #ccc; font-size: 10px; color: #999; writing-mode: vertical-rl;">${lon.toFixed(1)}°</div>`);
+        }
+        grid.innerHTML = lines.join('');
+    }
+
     function showTab(tabId) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
         document.getElementById('btn-' + tabId).classList.add('active');
         
-        if(tabId === 'employees') loadEmployees();
         if(tabId === 'positions') loadPositions();
+        if(tabId === 'employees') loadEmployees();
+        if(tabId === 'geozones') { 
+            loadGeoZones(); 
+            loadEmployeesForGeoAssign();
+            setTimeout(initMap, 100);
+        }
+        if(tabId === 'tasks') { loadEmployeesForTask(); loadTasks(); }
         if(tabId === 'reports') loadReports();
+    }
+
+    // --- Должности ---
+    async function loadPositions() {
+        const res = await fetch('/api/positions');
+        const data = await res.json();
+        const tbody = document.getElementById('posTable');
+        tbody.innerHTML = '';
+        data.forEach(p => {
+            tbody.innerHTML += `<tr>
+                <td>${p.name}</td>
+                <td>${p.hourlyRate}</td>
+                <td>
+                    <button class="warning" onclick="editPosition(${p.id}, '${p.name}', ${p.hourlyRate})">Ред.</button>
+                    <button class="danger" onclick="deletePos(${p.id})">Удалить</button>
+                </td>
+            </tr>`;
+        });
+    }
+
+    async function savePosition() {
+        const id = document.getElementById('posId').value;
+        const name = document.getElementById('posName').value;
+        const rate = document.getElementById('posRate').value;
+        
+        if (!name || !rate) { alert('Заполните все поля'); return; }
+        
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `/api/positions/${id}` : '/api/positions';
+        
+        await fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ name, hourlyRate: parseFloat(rate) })
+        });
+        loadPositions();
+        clearPosForm();
+    }
+
+    function editPosition(id, name, rate) {
+        document.getElementById('posId').value = id;
+        document.getElementById('posName').value = name;
+        document.getElementById('posRate').value = rate;
+    }
+
+    function clearPosForm() {
+        document.getElementById('posId').value = '';
+        document.getElementById('posName').value = '';
+        document.getElementById('posRate').value = '';
+    }
+
+    async function deletePos(id) {
+        if(confirm('Удалить должность?')) {
+            await fetch(`/api/positions/${id}`, { method: 'DELETE' });
+            loadPositions();
+        }
     }
 
     // --- Сотрудники ---
@@ -98,11 +379,16 @@
         const tbody = document.getElementById('empTable');
         tbody.innerHTML = '';
         data.forEach(e => {
+            const geoZones = e.geoZones ? e.geoZones.map(z => z.name).join(', ') : '-';
             tbody.innerHTML += `<tr>
                 <td>${e.fullName}</td>
                 <td>${e.phone}</td>
                 <td>${e.position ? e.position.name : '-'}</td>
-                <td><button class="danger" onclick="deleteEmp(${e.id})">Удалить</button></td>
+                <td>${e.password}</td>
+                <td>${geoZones}</td>
+                <td>
+                    <button class="danger" onclick="deleteEmp(${e.id})">Уволить</button>
+                </td>
             </tr>`;
         });
         loadPositionsForSelect();
@@ -124,6 +410,8 @@
         const pass = document.getElementById('empPass').value;
         const posId = document.getElementById('empPosition').value;
 
+        if (!name || !phone || !pass) { alert('Заполните ФИО, телефон и пароль'); return; }
+
         const body = { fullName: name, phone: phone, password: pass };
         if(posId) body.position = { id: parseInt(posId) };
 
@@ -133,51 +421,159 @@
             body: JSON.stringify(body)
         });
         loadEmployees();
-        // Очистка полей
         document.getElementById('empName').value = '';
+        document.getElementById('empPhone').value = '';
         document.getElementById('empPass').value = '';
     }
 
     async function deleteEmp(id) {
-        if(confirm('Удалить?')) {
+        if(confirm('Уволить сотрудника?')) {
             await fetch(`/api/employees/${id}`, { method: 'DELETE' });
             loadEmployees();
         }
     }
 
-    // --- Должности ---
-    async function loadPositions() {
-        const res = await fetch('/api/positions');
+    // --- Геозоны ---
+    async function loadGeoZones() {
+        const res = await fetch('/api/geozones');
         const data = await res.json();
-        const tbody = document.getElementById('posTable');
-        tbody.innerHTML = '';
-        data.forEach(p => {
-            tbody.innerHTML += `<tr>
-                <td>${p.name}</td>
-                <td>${p.hourlyRate}</td>
-                <td><button class="danger" onclick="deletePos(${p.id})">Удалить</button></td>
-            </tr>`;
+        const list = document.getElementById('geoZonesList');
+        list.innerHTML = '';
+        data.forEach(z => {
+            list.innerHTML += `<div class="geo-zone-item">
+                <span><strong>${z.name}</strong> - Широта: ${z.latitude}, Долгота: ${z.longitude}, Радиус: ${z.radius}м</span>
+                <div>
+                    <button class="warning" onclick="editGeoZone(${z.id}, '${z.name}', ${z.latitude}, ${z.longitude}, ${z.radius})">Ред.</button>
+                    <button class="danger" onclick="deleteGeoZone(${z.id})">Удалить</button>
+                </div>
+            </div>`;
         });
     }
 
-    async function addPosition() {
-        const name = document.getElementById('posName').value;
-        const rate = document.getElementById('posRate').value;
-        await fetch('/api/positions', {
+    async function saveGeoZone() {
+        const id = document.getElementById('zoneId').value;
+        const name = document.getElementById('zoneName').value;
+        const lat = document.getElementById('zoneLat').value;
+        const lon = document.getElementById('zoneLon').value;
+        const radius = document.getElementById('zoneRadius').value;
+        
+        if (!name || !lat || !lon || !radius) { alert('Заполните все поля'); return; }
+        
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `/api/geozones/${id}` : '/api/geozones';
+        
+        await fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ name, latitude: parseFloat(lat), longitude: parseFloat(lon), radius: parseFloat(radius) })
+        });
+        loadGeoZones();
+        clearZoneForm();
+    }
+
+    function editGeoZone(id, name, lat, lon, radius) {
+        document.getElementById('zoneId').value = id;
+        document.getElementById('zoneName').value = name;
+        document.getElementById('zoneLat').value = lat;
+        document.getElementById('zoneLon').value = lon;
+        document.getElementById('zoneRadius').value = radius;
+        document.getElementById('radiusSlider').value = radius;
+        document.getElementById('radiusValue').textContent = radius + ' м';
+        updateMapVisual();
+    }
+
+    function clearZoneForm() {
+        document.getElementById('zoneId').value = '';
+        document.getElementById('zoneName').value = '';
+        document.getElementById('zoneLat').value = '';
+        document.getElementById('zoneLon').value = '';
+        document.getElementById('zoneRadius').value = '';
+        document.getElementById('radiusSlider').value = 500;
+        document.getElementById('radiusValue').textContent = '500 м';
+        updateMapVisual();
+    }
+
+    async function deleteGeoZone(id) {
+        if(confirm('Удалить геозону?')) {
+            await fetch(`/api/geozones/${id}`, { method: 'DELETE' });
+            loadGeoZones();
+        }
+    }
+
+    async function loadEmployeesForGeoAssign() {
+        const [zonesRes, empsRes] = await Promise.all([
+            fetch('/api/geozones'),
+            fetch('/api/employees/list')
+        ]);
+        const zones = await zonesRes.json();
+        const emps = await empsRes.json();
+        
+        const zoneSel = document.getElementById('assignZoneSelect');
+        const empSel = document.getElementById('assignEmpSelect');
+        
+        zoneSel.innerHTML = '<option value="">Выберите геозону</option>';
+        zones.forEach(z => {
+            zoneSel.innerHTML += `<option value="${z.id}">${z.name}</option>`;
+        });
+        
+        empSel.innerHTML = '<option value="">Выберите сотрудника</option>';
+        emps.forEach(e => {
+            empSel.innerHTML += `<option value="${e.id}">${e.fullName}</option>`;
+        });
+    }
+
+    async function assignGeoZone() {
+        const zoneId = document.getElementById('assignZoneSelect').value;
+        const empId = document.getElementById('assignEmpSelect').value;
+        
+        if (!zoneId || !empId) { alert('Выберите геозону и сотрудника'); return; }
+        
+        await fetch(`/api/geozones/${zoneId}/assign/${empId}`, { method: 'POST' });
+        alert('Геозона назначена');
+        loadEmployees();
+    }
+
+    // --- Задания ---
+    async function loadEmployeesForTask() {
+        const res = await fetch('/api/employees/list');
+        const data = await res.json();
+        const sel = document.getElementById('taskEmpSelect');
+        sel.innerHTML = '<option value="">Выберите сотрудника</option>';
+        data.forEach(e => {
+            sel.innerHTML += `<option value="${e.id}">${e.fullName}</option>`;
+        });
+    }
+
+    async function assignTask() {
+        const empId = document.getElementById('taskEmpSelect').value;
+        const task = document.getElementById('taskText').value;
+        
+        if (!empId || !task) { alert('Выберите сотрудника и введите задание'); return; }
+        
+        await fetch('/api/tasks/assign', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ name, hourlyRate: rate })
+            body: JSON.stringify({ employeeId: empId, task: task })
         });
-        loadPositions();
-        document.getElementById('posName').value = '';
-        document.getElementById('posRate').value = '';
+        alert('Задание назначено');
+        document.getElementById('taskText').value = '';
+        loadTasks();
     }
 
-    async function deletePos(id) {
-        if(confirm('Удалить должность?')) {
-            await fetch(`/api/positions/${id}`, { method: 'DELETE' });
-            loadPositions();
-        }
+    async function loadTasks() {
+        const res = await fetch('/api/reports/all');
+        const data = await res.json();
+        const tbody = document.getElementById('taskTable');
+        tbody.innerHTML = '';
+        data.filter(r => r.dailyTask).forEach(r => {
+            tbody.innerHTML += `<tr>
+                <td>${r.employee.fullName}</td>
+                <td>${r.dailyTask}</td>
+                <td><span class="status-badge status-${r.status.toLowerCase()}">${r.status}</span></td>
+                <td>${r.startTime ? new Date(r.startTime).toLocaleString() : '-'}</td>
+                <td>${r.endTime ? new Date(r.endTime).toLocaleString() : '-'}</td>
+            </tr>`;
+        });
     }
 
     // --- Отчеты ---
@@ -187,17 +583,35 @@
         const tbody = document.getElementById('reportTable');
         tbody.innerHTML = '';
         data.forEach(r => {
+            let duration = '-';
+            if (r.startTime && r.endTime) {
+                const start = new Date(r.startTime);
+                const end = new Date(r.endTime);
+                const diffMs = end - start;
+                const hours = Math.floor(diffMs / 3600000);
+                const minutes = Math.floor((diffMs % 3600000) / 60000);
+                duration = `${hours}ч ${minutes}мин`;
+            }
+            
+            let photoHtml = '-';
+            if (r.reportPhotoUrl) {
+                photoHtml = `<a href="${r.reportPhotoUrl}" target="_blank"><img src="${r.reportPhotoUrl}" class="report-photo" alt="Фотоотчет"></a>`;
+            }
+            
             tbody.innerHTML += `<tr>
                 <td>${r.employee.fullName}</td>
-                <td>${r.startTime}</td>
-                <td>${r.endTime || '-'}</td>
-                <td>${r.status}</td>
+                <td>${r.dailyTask || '-'}</td>
+                <td>${r.startTime ? new Date(r.startTime).toLocaleString() : '-'}</td>
+                <td>${r.endTime ? new Date(r.endTime).toLocaleString() : '-'}</td>
+                <td>${duration}</td>
+                <td>${photoHtml}</td>
+                <td><span class="status-badge status-${r.status.toLowerCase()}">${r.status}</span></td>
             </tr>`;
         });
     }
 
     // Init
-    loadEmployees();
+    loadPositions();
 </script>
 </body>
 </html>

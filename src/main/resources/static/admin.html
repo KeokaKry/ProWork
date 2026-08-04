@@ -28,6 +28,9 @@
         .status-active { background: #d4edda; color: #155724; }
         .status-completed { background: #cce5ff; color: #004085; }
         .status-pending { background: #fff3cd; color: #856404; }
+        #map { position: relative; background: #e9ecef; overflow: hidden; }
+        .map-marker { position: absolute; width: 20px; height: 20px; background: #007bff; border: 3px solid white; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .map-circle { position: absolute; border: 2px solid #007bff; background: rgba(0, 123, 255, 0.2); border-radius: 50%; transform: translate(-50%, -50%); }
     </style>
 </head>
 <body>
@@ -89,9 +92,18 @@
             <h3>Добавить/Редактировать геозону</h3>
             <input type="hidden" id="zoneId">
             <input type="text" id="zoneName" placeholder="Название геозоны" style="width: 200px;">
-            <input type="number" step="any" id="zoneLat" placeholder="Широта" style="width: 120px;">
-            <input type="number" step="any" id="zoneLon" placeholder="Долгота" style="width: 120px;">
-            <input type="number" step="any" id="zoneRadius" placeholder="Радиус (м)" style="width: 100px;">
+            <br>
+            <div style="margin: 10px 0;">
+                <label>Координаты и радиус:</label><br>
+                <input type="number" step="any" id="zoneLat" placeholder="Широта" style="width: 120px;">
+                <input type="number" step="any" id="zoneLon" placeholder="Долгота" style="width: 120px;">
+                <input type="number" step="any" id="zoneRadius" placeholder="Радиус (м)" style="width: 100px;">
+            </div>
+            <div id="map" style="height: 400px; width: 100%; border: 1px solid #ddd; margin: 10px 0;"></div>
+            <p style="font-size: 12px; color: #666;">Кликните на карту для установки центра. Используйте ползунок для изменения радиуса.</p>
+            <input type="range" id="radiusSlider" min="10" max="5000" value="500" style="width: 300px;">
+            <span id="radiusValue">500 м</span>
+            <br>
             <button class="primary" onclick="saveGeoZone()">Сохранить</button>
             <button onclick="clearZoneForm()" style="background:#6c757d; color:white; border:none;">Очистить</button>
         </div>
@@ -142,6 +154,151 @@
 </div>
 
 <script>
+    // Карта и геозоны
+    let map = null;
+    let mapCenter = { lat: 55.751244, lon: 37.618423 }; // Москва по умолчанию
+    let mapRadius = 500;
+    let mapMarker = null;
+    let mapCircle = null;
+    let isDragging = false;
+
+    function initMap() {
+        const mapEl = document.getElementById('map');
+        if (!mapEl) return;
+        
+        updateMapVisual();
+        
+        // Обработка клика для установки центра
+        mapEl.addEventListener('click', function(e) {
+            const rect = mapEl.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const coords = pixelToCoords(x, y);
+            document.getElementById('zoneLat').value = coords.lat.toFixed(6);
+            document.getElementById('zoneLon').value = coords.lon.toFixed(6);
+            
+            updateMapVisual();
+        });
+        
+        // Ползунок радиуса
+        const slider = document.getElementById('radiusSlider');
+        slider.addEventListener('input', function() {
+            mapRadius = parseInt(this.value);
+            document.getElementById('radiusValue').textContent = mapRadius + ' м';
+            document.getElementById('zoneRadius').value = mapRadius;
+            updateMapVisual();
+        });
+        
+        // Синхронизация полей с картой
+        ['zoneLat', 'zoneLon', 'zoneRadius'].forEach(id => {
+            document.getElementById(id).addEventListener('input', function() {
+                if (id === 'zoneLat' || id === 'zoneLon') {
+                    const lat = parseFloat(document.getElementById('zoneLat').value) || mapCenter.lat;
+                    const lon = parseFloat(document.getElementById('zoneLon').value) || mapCenter.lon;
+                    mapCenter = { lat, lon };
+                } else if (id === 'zoneRadius') {
+                    mapRadius = parseFloat(document.getElementById('zoneRadius').value) || 500;
+                    document.getElementById('radiusSlider').value = mapRadius;
+                    document.getElementById('radiusValue').textContent = mapRadius + ' м';
+                }
+                updateMapVisual();
+            });
+        });
+    }
+
+    function coordsToPixel(lat, lon) {
+        const mapEl = document.getElementById('map');
+        const width = mapEl.clientWidth;
+        const height = mapEl.clientHeight;
+        
+        // Простая проекция для отображения
+        const minLat = 54.0;
+        const maxLat = 57.0;
+        const minLon = 36.0;
+        const maxLon = 39.0;
+        
+        const x = ((lon - minLon) / (maxLon - minLon)) * width;
+        const y = ((maxLat - lat) / (maxLat - minLat)) * height;
+        
+        return { x, y };
+    }
+
+    function pixelToCoords(x, y) {
+        const mapEl = document.getElementById('map');
+        const width = mapEl.clientWidth;
+        const height = mapEl.clientHeight;
+        
+        const minLat = 54.0;
+        const maxLat = 57.0;
+        const minLon = 36.0;
+        const maxLon = 39.0;
+        
+        const lon = (x / width) * (maxLon - minLon) + minLon;
+        const lat = maxLat - (y / height) * (maxLat - minLat);
+        
+        return { lat, lon };
+    }
+
+    function updateMapVisual() {
+        const mapEl = document.getElementById('map');
+        if (!mapEl) return;
+        
+        // Очистка старых элементов
+        const old = mapEl.querySelectorAll('.map-marker, .map-circle');
+        old.forEach(el => el.remove());
+        
+        const center = document.getElementById('zoneLat').value && document.getElementById('zoneLon').value ? 
+            { lat: parseFloat(document.getElementById('zoneLat').value), lon: parseFloat(document.getElementById('zoneLon').value) } : 
+            mapCenter;
+        
+        const radius = parseFloat(document.getElementById('zoneRadius').value) || mapRadius;
+        
+        const pos = coordsToPixel(center.lat, center.lon);
+        
+        // Маркер центра
+        const marker = document.createElement('div');
+        marker.className = 'map-marker';
+        marker.style.left = pos.x + 'px';
+        marker.style.top = pos.y + 'px';
+        mapEl.appendChild(marker);
+        
+        // Круг радиуса
+        const circle = document.createElement('div');
+        circle.className = 'map-circle';
+        const radiusPixels = Math.min(200, (radius / 5000) * Math.min(mapEl.clientWidth, mapEl.clientHeight));
+        circle.style.width = (radiusPixels * 2) + 'px';
+        circle.style.height = (radiusPixels * 2) + 'px';
+        circle.style.left = pos.x + 'px';
+        circle.style.top = pos.y + 'px';
+        mapEl.appendChild(circle);
+        
+        // Сетка координат
+        renderMapGrid();
+    }
+
+    function renderMapGrid() {
+        const mapEl = document.getElementById('map');
+        let grid = mapEl.querySelector('.map-grid');
+        if (!grid) {
+            grid = document.createElement('div');
+            grid.className = 'map-grid';
+            grid.style.cssText = 'position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none;';
+            mapEl.appendChild(grid);
+        }
+        
+        const lines = [];
+        for (let lat = 54.5; lat < 57; lat += 0.5) {
+            const pos = coordsToPixel(lat, 37.5);
+            lines.push(`<div style="position: absolute; left: 0; right: 0; top: ${pos.y}px; border-top: 1px dashed #ccc; font-size: 10px; color: #999;">${lat.toFixed(1)}°</div>`);
+        }
+        for (let lon = 36.5; lon < 39; lon += 0.5) {
+            const pos = coordsToPixel(55.5, lon);
+            lines.push(`<div style="position: absolute; top: 10px; bottom: 10px; left: ${pos.x}px; border-left: 1px dashed #ccc; font-size: 10px; color: #999; writing-mode: vertical-rl;">${lon.toFixed(1)}°</div>`);
+        }
+        grid.innerHTML = lines.join('');
+    }
+
     function showTab(tabId) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
@@ -150,7 +307,11 @@
         
         if(tabId === 'positions') loadPositions();
         if(tabId === 'employees') loadEmployees();
-        if(tabId === 'geozones') { loadGeoZones(); loadEmployeesForGeoAssign(); }
+        if(tabId === 'geozones') { 
+            loadGeoZones(); 
+            loadEmployeesForGeoAssign();
+            setTimeout(initMap, 100);
+        }
         if(tabId === 'tasks') { loadEmployeesForTask(); loadTasks(); }
         if(tabId === 'reports') loadReports();
     }
@@ -316,6 +477,9 @@
         document.getElementById('zoneLat').value = lat;
         document.getElementById('zoneLon').value = lon;
         document.getElementById('zoneRadius').value = radius;
+        document.getElementById('radiusSlider').value = radius;
+        document.getElementById('radiusValue').textContent = radius + ' м';
+        updateMapVisual();
     }
 
     function clearZoneForm() {
@@ -324,6 +488,9 @@
         document.getElementById('zoneLat').value = '';
         document.getElementById('zoneLon').value = '';
         document.getElementById('zoneRadius').value = '';
+        document.getElementById('radiusSlider').value = 500;
+        document.getElementById('radiusValue').textContent = '500 м';
+        updateMapVisual();
     }
 
     async function deleteGeoZone(id) {
