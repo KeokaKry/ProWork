@@ -1,68 +1,46 @@
 package com.worktrcker.app.controller;
 
-import com.worktrcker.app.entity.Employee;
+import com.worktrcker.app.model.Employee;
 import com.worktrcker.app.repository.EmployeeRepository;
+import com.worktrcker.app.repository.PositionRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
-/**
- * Контроллер для админ-панели.
- * Управление сотрудниками доступно только через админ-панель.
- */
 @RestController
-@RequestMapping("/api/admin/employees")
+@RequestMapping("/api/employees")
+@CrossOrigin(origins = "*")
 public class EmployeeController {
 
-    private final EmployeeRepository employeeRepository;
+    @Autowired
+    private EmployeeRepository employeeRepository;
+    
+    @Autowired
+    private PositionRepository positionRepository;
 
-    public EmployeeController(EmployeeRepository employeeRepository) {
-        this.employeeRepository = employeeRepository;
+    // Получить список всех сотрудников (для выпадающего списка)
+    @GetMapping("/list")
+    public ResponseEntity<List<Employee>> getAllEmployees() {
+        return ResponseEntity.ok(employeeRepository.findAllByOrderByFullNameAsc());
     }
 
-    /**
-     * Получить всех сотрудников (только для админа)
-     */
-    @GetMapping
-    public List<Employee> getAllEmployees() {
-        return employeeRepository.findAll();
-    }
-
-    /**
-     * Создать нового сотрудника (только через админ-панель)
-     */
+    // Создать сотрудника (Только Админ)
     @PostMapping
-    public Employee createEmployee(@RequestBody Employee employee) {
-        // Проверяем, не занят ли username
-        if (employeeRepository.findByUsername(employee.getUsername()).isPresent()) {
-            throw new IllegalStateException("Пользователь с таким логином уже существует");
+    public ResponseEntity<Employee> createEmployee(@RequestBody Employee employee) {
+        // Проверка наличия должности, если передана ID
+        if (employee.getPosition() != null && employee.getPosition().getId() != null) {
+            positionRepository.findById(employee.getPosition().getId())
+                .ifPresent(employee::setPosition);
         }
-        return employeeRepository.save(employee);
+        return ResponseEntity.ok(employeeRepository.save(employee));
     }
-
-    /**
-     * Обновить сотрудника (только для админа)
-     */
-    @PutMapping("/{id}")
-    public Employee updateEmployee(@PathVariable Long id, @RequestBody Employee employeeDetails) {
-        Employee employee = employeeRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Сотрудник не найден"));
-        
-        employee.setFullName(employeeDetails.getFullName());
-        employee.setPosition(employeeDetails.getPosition());
-        employee.setHourlyRate(employeeDetails.getHourlyRate());
-        employee.setPhoneNumber(employeeDetails.getPhoneNumber());
-        employee.setUsername(employeeDetails.getUsername());
-        employee.setPassword(employeeDetails.getPassword());
-        
-        return employeeRepository.save(employee);
-    }
-
-    /**
-     * Удалить сотрудника (только для админа)
-     */
+    
     @DeleteMapping("/{id}")
-    public void deleteEmployee(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteEmployee(@PathVariable Long id) {
         employeeRepository.deleteById(id);
+        return ResponseEntity.ok().build();
     }
 }

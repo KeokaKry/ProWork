@@ -1,30 +1,11 @@
 package com.worktrcker.app.repository;
 
-import com.worktrcker.app.entity.Employee;
+import com.worktrcker.app.model.Employee;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
 import java.util.Optional;
+import java.util.List;
 
-/**
- * Репозиторий для работы с сотрудниками.
- * Предоставляет методы для поиска сотрудников по телефону, username и ФИО.
- */
-@Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
-    
-    /**
-     * Поиск сотрудника по номеру телефона
-     */
-    Employee findByPhoneNumber(String phoneNumber);
-    
-    /**
-     * Поиск сотрудника по username (логину)
-     */
-    Optional<Employee> findByUsername(String username);
-    
-    /**
-     * Поиск сотрудника по ФИО
-     */
-    Optional<Employee> findByFullName(String fullName);
+    Optional<Employee> findByFullNameAndPassword(String fullName, String password);
+    List<Employee> findAllByOrderByFullNameAsc();
 }
