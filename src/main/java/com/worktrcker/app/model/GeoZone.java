@@ -19,6 +19,5 @@ public class GeoZone {
     private Double radius; // в метрах
 
     @ManyToMany(mappedBy = "geoZones")
-    @JsonIgnore
     private List<Employee> employees;
 }

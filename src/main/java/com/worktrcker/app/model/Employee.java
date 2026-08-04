@@ -32,7 +32,6 @@ public class Employee {
         joinColumns = @JoinColumn(name = "employee_id"),
         inverseJoinColumns = @JoinColumn(name = "geo_zone_id")
     )
-    @JsonIgnore
     private List<GeoZone> geoZones;
 
     private Double startLatitude;

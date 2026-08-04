@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,8 +40,17 @@ public class TaskController {
         record.setEmployee(empOpt.get());
         record.setDailyTask(task);
         record.setStatus("PENDING"); // Ожидает начала работы
+        record.setStartTime(LocalDateTime.now());
         
-        return ResponseEntity.ok(workRecordRepository.save(record));
+        WorkRecord savedRecord = workRecordRepository.save(record);
+        
+        // Возвращаем все задания сотрудника
+        List<WorkRecord> employeeTasks = workRecordRepository.findByEmployeeId(employeeId);
+        
+        return ResponseEntity.ok(Map.of(
+            "assignedTask", savedRecord,
+            "employeeTasks", employeeTasks
+        ));
     }
     
     // Обновить задание для записи работы
@@ -61,5 +70,19 @@ public class TaskController {
     @GetMapping("/employee/{employeeId}")
     public ResponseEntity<List<WorkRecord>> getEmployeeTasks(@PathVariable Long employeeId) {
         return ResponseEntity.ok(workRecordRepository.findByEmployeeId(employeeId));
+    }
+    
+    // Отметить задание как выполненное
+    @PostMapping("/{recordId}/complete")
+    public ResponseEntity<WorkRecord> completeTask(@PathVariable Long recordId) {
+        Optional<WorkRecord> recordOpt = workRecordRepository.findById(recordId);
+        if (recordOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        WorkRecord record = recordOpt.get();
+        record.setStatus("COMPLETED");
+        record.setEndTime(LocalDateTime.now());
+        return ResponseEntity.ok(workRecordRepository.save(record));
     }
 }
