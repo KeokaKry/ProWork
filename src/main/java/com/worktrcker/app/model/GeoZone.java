@@ -2,6 +2,7 @@ package com.worktrcker.app.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import java.util.List;
 
 @Entity
 @Data
@@ -15,4 +16,7 @@ public class GeoZone {
     private Double latitude;
     private Double longitude;
     private Double radius; // в метрах
+
+    @ManyToMany(mappedBy = "geoZones")
+    private List<Employee> employees;
 }

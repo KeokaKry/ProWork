@@ -25,4 +25,8 @@ public class WorkRecord {
     private Double endLon;
 
     private String status; // ACTIVE, COMPLETED
+    
+    private String dailyTask; // Задание на день от админа
+    
+    private String reportPhotoUrl; // Ссылка на фотоотчет
 }
