@@ -21,10 +21,10 @@ public class EmployeeController {
     @Autowired
     private PositionRepository positionRepository;
 
-    // Получить список всех сотрудников (для выпадающего списка)
+    // Получить список всех сотрудников с геозонами
     @GetMapping("/list")
     public ResponseEntity<List<Employee>> getAllEmployees() {
-        return ResponseEntity.ok(employeeRepository.findAllByOrderByFullNameAsc());
+        return ResponseEntity.ok(employeeRepository.findAllWithGeoZones());
     }
 
     // Создать сотрудника (Только Админ)

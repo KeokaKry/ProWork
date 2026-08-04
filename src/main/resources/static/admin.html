@@ -435,13 +435,18 @@
 
     // --- Геозоны ---
     async function loadGeoZones() {
-        const res = await fetch('/api/geozones');
+        const res = await fetch('/api/geozones/with-employees');
         const data = await res.json();
         const list = document.getElementById('geoZonesList');
         list.innerHTML = '';
         data.forEach(z => {
+            const employees = z.employees && z.employees.length > 0 ? 
+                z.employees.map(e => e.fullName).join(', ') : 'Нет сотрудников';
             list.innerHTML += `<div class="geo-zone-item">
-                <span><strong>${z.name}</strong> - Широта: ${z.latitude}, Долгота: ${z.longitude}, Радиус: ${z.radius}м</span>
+                <div>
+                    <strong>${z.name}</strong> - Широта: ${z.latitude}, Долгота: ${z.longitude}, Радиус: ${z.radius}м<br>
+                    <small style="color:#666;">Сотрудники: ${employees}</small>
+                </div>
                 <div>
                     <button class="warning" onclick="editGeoZone(${z.id}, '${z.name}', ${z.latitude}, ${z.longitude}, ${z.radius})">Ред.</button>
                     <button class="danger" onclick="deleteGeoZone(${z.id})">Удалить</button>

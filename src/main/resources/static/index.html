@@ -67,6 +67,7 @@
     <div id="tab-main" class="tab-content active">
         <p id="workTimer" style="font-size: 14px; color: #666;"></p>
         <button id="actionBtn" onclick="toggleWork()">Начать смену</button>
+        <button id="completeTaskBtn" onclick="completeTask()" style="display:none; background:#28a745; margin-top:10px;">Задание выполнено</button>
     </div>
     
     <!-- Вкладка Задание -->
@@ -252,6 +253,7 @@
 
     function updateUI(working) {
         const btn = document.getElementById('actionBtn');
+        const completeBtn = document.getElementById('completeTaskBtn');
         const badge = document.getElementById('statusBadge');
         if (working) {
             btn.textContent = "Завершить смену";
@@ -259,12 +261,21 @@
             badge.textContent = "Статус: Работает";
             badge.style.background = "#d4edda";
             badge.style.color = "#155724";
+            // Показываем кнопку "Задание выполнено" если есть активное задание
+            loadDailyTask().then(hasTask => {
+                if (hasTask && completeBtn) {
+                    completeBtn.style.display = 'block';
+                }
+            });
         } else {
             btn.textContent = "Начать смену";
             btn.className = "success";
             badge.textContent = "Статус: Не активен";
             badge.style.background = "#e2e6ea";
             badge.style.color = "#333";
+            if (completeBtn) {
+                completeBtn.style.display = 'none';
+            }
         }
     }
 
@@ -317,10 +328,40 @@
                 const lastTask = tasks[tasks.length - 1];
                 if (lastTask.dailyTask) {
                     document.getElementById('dailyTask').textContent = lastTask.dailyTask;
+                    return true;
                 }
             }
+            return false;
         } catch (e) {
             console.error("Ошибка загрузки задания", e);
+            return false;
+        }
+    }
+    
+    // Функция для отметки выполнения задания
+    async function completeTask() {
+        if (!currentWorkId) {
+            alert("Сначала начните смену");
+            return;
+        }
+        
+        if (confirm("Отметить задание как выполненное?")) {
+            try {
+                const res = await fetch(`/api/tasks/${currentWorkId}/complete`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                });
+                
+                if (res.ok) {
+                    alert("Задание выполнено!");
+                    document.getElementById('completeTaskBtn').style.display = 'none';
+                    loadDailyTask();
+                } else {
+                    alert("Ошибка обновления статуса");
+                }
+            } catch (e) {
+                alert("Ошибка соединения");
+            }
         }
     }
 
