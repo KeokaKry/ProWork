@@ -3,6 +3,7 @@ package com.worktrcker.app.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Data
@@ -31,11 +32,13 @@ public class Employee {
         joinColumns = @JoinColumn(name = "employee_id"),
         inverseJoinColumns = @JoinColumn(name = "geo_zone_id")
     )
+    @JsonIgnore
     private List<GeoZone> geoZones;
 
     private Double startLatitude;
     private Double startLongitude;
 
     @OneToMany(mappedBy = "employee")
+    @JsonIgnore
     private List<WorkRecord> workRecords;
 }
