@@ -72,7 +72,7 @@ public class TaskController {
         return ResponseEntity.ok(workRecordRepository.findByEmployeeId(employeeId));
     }
     
-    // Отметить задание как выполненное
+    // Отметить задание как выполненное (кнопка "Готово" для сотрудника)
     @PostMapping("/{recordId}/complete")
     public ResponseEntity<WorkRecord> completeTask(@PathVariable Long recordId) {
         Optional<WorkRecord> recordOpt = workRecordRepository.findById(recordId);

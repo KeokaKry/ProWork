@@ -3,7 +3,7 @@ package com.worktrcker.app.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Data
@@ -13,9 +13,9 @@ public class WorkRecord {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id")
-    @JsonIgnore
+    @JsonIgnoreProperties({"geoZones", "workRecords", "hibernateLazyInitializer"})
     private Employee employee;
 
     private LocalDateTime startTime;
@@ -26,7 +26,7 @@ public class WorkRecord {
     private Double endLat;
     private Double endLon;
 
-    private String status; // ACTIVE, COMPLETED
+    private String status; // ACTIVE, COMPLETED, PENDING
     
     private String dailyTask; // Задание на день от админа
     
