@@ -1,27 +1,27 @@
 ```
-# Java/Maven build artifacts
-target/
+# Compiled and build artifacts
 *.class
+target/
 
-# Maven status files
-target/maven-status/
-
-# IDE files
-.vscode/
-.idea/
-*.iml
-*.ipr
-*.iws
-
-# Logs
+# Logs and temp files
 *.log
-
-# Temporary files
-*.tmp
-*.swp
+server.log
 
 # Environment
 .env
 .env.local
 *.env.*
+
+# Editors
+.vscode/
+.idea/
+
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+.gradle/
 ```
