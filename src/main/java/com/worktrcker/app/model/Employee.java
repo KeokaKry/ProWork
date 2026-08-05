@@ -3,7 +3,6 @@ package com.worktrcker.app.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.util.List;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
@@ -25,10 +24,10 @@ public class Employee {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "position_id")
-    @JsonIgnoreProperties({"employees", "hibernateLazyInitializer"})
+    @JsonIgnoreProperties({"employees", "geoZones", "hibernateLazyInitializer"})
     private Position position;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "employee_geo_zones",
         joinColumns = @JoinColumn(name = "employee_id"),
@@ -41,6 +40,6 @@ public class Employee {
     private Double startLongitude;
 
     @OneToMany(mappedBy = "employee")
-    @JsonIgnore
+    @JsonIgnoreProperties("employee")
     private List<WorkRecord> workRecords;
 }

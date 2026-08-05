@@ -1,8 +1,39 @@
 ```
-# Compiled and build artifacts
+# Java build artifacts
 *.class
-target/
+*.jar
+*.war
+*.ear
 
-# Logs and temp files
+# Maven/Gradle directories
+target/
+build/
+
+# IDE files
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# Dependencies
+lib/
+libs/
+
+# Logs
 *.log
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*~
 ```

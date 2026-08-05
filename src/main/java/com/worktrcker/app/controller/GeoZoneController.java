@@ -26,12 +26,6 @@ public class GeoZoneController {
     public ResponseEntity<List<GeoZone>> getAllGeoZones() {
         return ResponseEntity.ok(geoZoneRepository.findAll());
     }
-    
-    // Получить все геозоны с сотрудниками (для вкладки геозоны)
-    @GetMapping("/with-employees")
-    public ResponseEntity<List<GeoZone>> getAllGeoZonesWithEmployees() {
-        return ResponseEntity.ok(geoZoneRepository.findAllWithEmployees());
-    }
 
     @PostMapping
     public ResponseEntity<GeoZone> createGeoZone(@RequestBody GeoZone geoZone) {
