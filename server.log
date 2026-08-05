@@ -62,3 +62,20 @@ nohup: ignoring input
 2026-08-05T09:29:28.513Z  INFO 2165 --- [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
 2026-08-05T09:29:28.514Z  INFO 2165 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
 2026-08-05T09:29:28.515Z  INFO 2165 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-08-05T09:40:28.652Z  INFO 2165 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-08-05T09:40:28.656Z  INFO 2165 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-08-05T09:40:28.658Z  INFO 2165 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+[[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+[[1;34mINFO[m] [1;31mBUILD FAILURE[m
+[[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+[[1;34mINFO[m] Total time:  11:25 min
+[[1;34mINFO[m] Finished at: 2026-08-05T09:40:28Z
+[[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+[[1;31mERROR[m] Failed to execute goal [32morg.springframework.boot:spring-boot-maven-plugin:3.2.5:run[m [1m(default-cli)[m on project [36mapp[m: [1;31mProcess terminated with exit code: 143[m -> [1m[Help 1][m
+[[1;31mERROR[m] 
+[[1;31mERROR[m] To see the full stack trace of the errors, re-run Maven with the [1m-e[m switch.
+[[1;31mERROR[m] Re-run Maven using the [1m-X[m switch to enable full debug logging.
+[[1;31mERROR[m] 
+[[1;31mERROR[m] For more information about the errors and possible solutions, please read the following articles:
+[[1;31mERROR[m] [1m[Help 1][m http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
+[0m[0m

@@ -23,8 +23,9 @@ public class Employee {
     @Column(nullable = false)
     private String password; // Пароль выдает админ
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "position_id")
+    @JsonIgnoreProperties({"employees", "hibernateLazyInitializer"})
     private Position position;
 
     @ManyToMany
