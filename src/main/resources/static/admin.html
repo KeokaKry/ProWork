@@ -68,7 +68,8 @@
     <div id="employees" class="tab-content">
         <h2>Управление сотрудниками</h2>
         <div class="form-group">
-            <h3>Добавить сотрудника</h3>
+            <h3>Добавить/Редактировать сотрудника</h3>
+            <input type="hidden" id="empId">
             <input type="text" id="empName" placeholder="ФИО" style="width: 250px;">
             <input type="text" id="empPhone" placeholder="Телефон" style="width: 150px;">
             <input type="text" id="empPass" placeholder="Пароль для входа" style="width: 150px;">
@@ -76,7 +77,8 @@
                 <option value="">Выберите должность</option>
             </select>
             <br>
-            <button class="success" onclick="addEmployee()">Создать</button>
+            <button class="primary" onclick="saveEmployee()">Сохранить</button>
+            <button onclick="clearEmpForm()" style="background:#6c757d; color:white; border:none;">Очистить</button>
         </div>
         <h3>Список сотрудников</h3>
         <table>
@@ -387,6 +389,7 @@
                 <td>${e.password}</td>
                 <td>${geoZones}</td>
                 <td>
+                    <button class="warning" onclick="editEmployee(${e.id}, '${e.fullName}', '${e.phone}', '${e.password}', ${e.position ? e.position.id : ''})">Ред.</button>
                     <button class="danger" onclick="deleteEmp(${e.id})">Уволить</button>
                 </td>
             </tr>`;
@@ -404,7 +407,17 @@
         });
     }
 
-    async function addEmployee() {
+    function editEmployee(id, fullName, phone, password, positionId) {
+        document.getElementById('empId').value = id;
+        document.getElementById('empName').value = fullName;
+        document.getElementById('empPhone').value = phone;
+        document.getElementById('empPass').value = password;
+        document.getElementById('empPosition').value = positionId || '';
+        window.scrollTo(0, 0);
+    }
+
+    async function saveEmployee() {
+        const id = document.getElementById('empId').value;
         const name = document.getElementById('empName').value;
         const phone = document.getElementById('empPhone').value;
         const pass = document.getElementById('empPass').value;
@@ -415,15 +428,28 @@
         const body = { fullName: name, phone: phone, password: pass };
         if(posId) body.position = { id: parseInt(posId) };
 
-        await fetch('/api/employees', {
-            method: 'POST',
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `/api/employees/${id}` : '/api/employees';
+
+        await fetch(url, {
+            method: method,
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(body)
         });
+        clearEmpForm();
         loadEmployees();
+    }
+
+    function clearEmpForm() {
+        document.getElementById('empId').value = '';
         document.getElementById('empName').value = '';
         document.getElementById('empPhone').value = '';
         document.getElementById('empPass').value = '';
+        document.getElementById('empPosition').value = '';
+    }
+
+    async function addEmployee() {
+        clearEmpForm();
     }
 
     async function deleteEmp(id) {

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Data
@@ -19,5 +20,6 @@ public class GeoZone {
     private Double radius; // в метрах
 
     @ManyToMany(mappedBy = "geoZones")
+    @JsonIgnoreProperties("geoZones")
     private List<Employee> employees;
 }

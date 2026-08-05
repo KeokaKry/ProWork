@@ -40,21 +40,20 @@ public class EmployeeController {
     
     // Обновить сотрудника (назначить должность, изменить пароль)
     @PutMapping("/{id}")
-    public ResponseEntity<Employee> updateEmployee(@PathVariable Long id, @RequestBody Map<String, Object> updates) {
+    public ResponseEntity<Employee> updateEmployee(@PathVariable Long id, @RequestBody Employee updates) {
         return employeeRepository.findById(id)
             .map(employee -> {
-                if (updates.containsKey("fullName")) {
-                    employee.setFullName((String) updates.get("fullName"));
+                if (updates.getFullName() != null) {
+                    employee.setFullName(updates.getFullName());
                 }
-                if (updates.containsKey("phone")) {
-                    employee.setPhone((String) updates.get("phone"));
+                if (updates.getPhone() != null) {
+                    employee.setPhone(updates.getPhone());
                 }
-                if (updates.containsKey("password")) {
-                    employee.setPassword((String) updates.get("password"));
+                if (updates.getPassword() != null) {
+                    employee.setPassword(updates.getPassword());
                 }
-                if (updates.containsKey("positionId")) {
-                    Long positionId = Long.valueOf(updates.get("positionId").toString());
-                    positionRepository.findById(positionId).ifPresent(employee::setPosition);
+                if (updates.getPosition() != null && updates.getPosition().getId() != null) {
+                    positionRepository.findById(updates.getPosition().getId()).ifPresent(employee::setPosition);
                 }
                 return ResponseEntity.ok(employeeRepository.save(employee));
             })
