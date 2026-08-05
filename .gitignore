@@ -1,28 +1,27 @@
 ```
-# Compiled and build artifacts
-*.class
+# Java/Maven build artifacts
 target/
+*.class
 
-# Dependencies
-.m2/
-.gradle/
+# Maven status files
+target/maven-status/
 
-# Logs and temp files
+# IDE files
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Logs
 *.log
+
+# Temporary files
 *.tmp
+*.swp
 
 # Environment
 .env
 .env.local
 *.env.*
-
-# Editors
-.vscode/
-.idea/
-
-# Maven
-target/
-.mvn/
-mvnw
-mvnw.cmd
 ```
