@@ -461,10 +461,14 @@
 
     // --- Геозоны ---
     async function loadGeoZones() {
-        const res = await fetch('/api/geozones/with-employees');
+        const res = await fetch('/api/geozones');
         const data = await res.json();
         const list = document.getElementById('geoZonesList');
         list.innerHTML = '';
+        if (!data || data.length === 0) {
+            list.innerHTML = '<p style="color:#666;">Геозоны не найдены</p>';
+            return;
+        }
         data.forEach(z => {
             const employees = z.employees && z.employees.length > 0 ? 
                 z.employees.map(e => e.fullName).join(', ') : 'Нет сотрудников';

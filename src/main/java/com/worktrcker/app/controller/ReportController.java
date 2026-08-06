@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -69,5 +70,40 @@ public class ReportController {
     @GetMapping("/employee/{employeeId}")
     public ResponseEntity<List<WorkRecord>> getEmployeeReports(@PathVariable Long employeeId) {
         return ResponseEntity.ok(workRecordRepository.findByEmployeeId(employeeId));
+    }
+    
+    // Отчет по сменам за период (для админа)
+    @GetMapping("/report")
+    public ResponseEntity<List<WorkRecord>> getWorkRecordsReport(
+            @RequestParam(required = false) Long employeeId,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        
+        List<WorkRecord> records;
+        
+        if (employeeId != null) {
+            // Отчет по конкретному сотруднику
+            records = workRecordRepository.findByEmployeeId(employeeId);
+        } else {
+            // Отчет по всем сотрудникам
+            records = workRecordRepository.findAll();
+        }
+        
+        // Фильтрация по датам если указаны
+        if (startDate != null) {
+            LocalDateTime startDateTime = LocalDateTime.parse(startDate);
+            records = records.stream()
+                .filter(r -> r.getStartTime() != null && !r.getStartTime().isBefore(startDateTime))
+                .toList();
+        }
+        
+        if (endDate != null) {
+            LocalDateTime endDateTime = LocalDateTime.parse(endDate);
+            records = records.stream()
+                .filter(r -> r.getEndTime() != null && !r.getEndTime().isAfter(endDateTime))
+                .toList();
+        }
+        
+        return ResponseEntity.ok(records);
     }
 }
