@@ -5,12 +5,12 @@
 /workspace/src/main/java/com/worktrcker/app/controller/ReportController.java
 /workspace/src/main/java/com/worktrcker/app/dto/StartWorkRequest.java
 /workspace/src/main/java/com/worktrcker/app/controller/NotificationController.java
-/workspace/src/main/java/com/worktrcker/app/controller/GeoZoneController.java
-/workspace/src/main/java/com/worktrcker/app/controller/TaskController.java
 /workspace/src/main/java/com/worktrcker/app/repository/EmployeeRepository.java
+/workspace/src/main/java/com/worktrcker/app/controller/TaskController.java
+/workspace/src/main/java/com/worktrcker/app/controller/GeoZoneController.java
 /workspace/src/main/java/com/worktrcker/app/repository/PositionRepository.java
-/workspace/src/main/java/com/worktrcker/app/controller/EmployeeController.java
 /workspace/src/main/java/com/worktrcker/app/model/GeoZone.java
+/workspace/src/main/java/com/worktrcker/app/controller/EmployeeController.java
 /workspace/src/main/java/com/worktrcker/app/controller/WorkController.java
 /workspace/src/main/java/com/worktrcker/app/controller/PositionController.java
 /workspace/src/main/java/com/worktrcker/app/model/Position.java

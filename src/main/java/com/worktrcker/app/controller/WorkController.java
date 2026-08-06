@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/work")
+@RequestMapping("/api")
 @CrossOrigin(origins = "*")
 public class WorkController {
 
@@ -39,7 +39,13 @@ public class WorkController {
         return R * c;
     }
 
-    @PostMapping("/start")
+    // Получить все задания (список работ)
+    @GetMapping("/work-records")
+    public ResponseEntity<List<WorkRecord>> getAllWorkRecords() {
+        return ResponseEntity.ok(workRecordRepository.findAll());
+    }
+    
+    @PostMapping("/work/start")
     public ResponseEntity<?> startWork(@RequestBody StartWorkRequest request) {
         Optional<Employee> empOpt = employeeRepository.findById(request.getEmployeeId());
         if (empOpt.isEmpty()) return ResponseEntity.badRequest().body("Сотрудник не найден");
@@ -74,7 +80,7 @@ public class WorkController {
         return ResponseEntity.ok(workRecordRepository.save(record));
     }
 
-    @PostMapping("/finish/{id}")
+    @PostMapping("/work/finish/{id}")
     public ResponseEntity<?> finishWork(@PathVariable Long id, @RequestBody Map<String, Double> location) {
         Optional<WorkRecord> recordOpt = workRecordRepository.findById(id);
         if (recordOpt.isEmpty()) return ResponseEntity.badRequest().body("Запись не найдена");
@@ -88,13 +94,13 @@ public class WorkController {
         return ResponseEntity.ok(workRecordRepository.save(record));
     }
     
-    @GetMapping("/history/{employeeId}")
+    @GetMapping("/work/history/{employeeId}")
     public ResponseEntity<List<WorkRecord>> getHistory(@PathVariable Long employeeId) {
         return ResponseEntity.ok(workRecordRepository.findByEmployeeId(employeeId));
     }
     
     // Получить активную запись работы сотрудника
-    @GetMapping("/active/{employeeId}")
+    @GetMapping("/work/active/{employeeId}")
     public ResponseEntity<?> getActiveWork(@PathVariable Long employeeId) {
         List<WorkRecord> records = workRecordRepository.findByEmployeeId(employeeId);
         for (WorkRecord record : records) {
@@ -106,7 +112,7 @@ public class WorkController {
     }
     
     // Получить информацию о перерывах (для уведомлений)
-    @GetMapping("/break-info/{employeeId}")
+    @GetMapping("/work/break-info/{employeeId}")
     public ResponseEntity<?> getBreakInfo(@PathVariable Long employeeId) {
         List<WorkRecord> records = workRecordRepository.findByEmployeeId(employeeId);
         WorkRecord activeRecord = null;

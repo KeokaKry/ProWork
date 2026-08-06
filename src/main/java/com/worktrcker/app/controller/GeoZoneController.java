@@ -24,7 +24,7 @@ public class GeoZoneController {
 
     @GetMapping
     public ResponseEntity<List<GeoZone>> getAllGeoZones() {
-        return ResponseEntity.ok(geoZoneRepository.findAll());
+        return ResponseEntity.ok(geoZoneRepository.findAllWithEmployees());
     }
 
     @PostMapping
