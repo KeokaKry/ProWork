@@ -85,6 +85,7 @@
         <input type="file" id="reportPhoto" accept="image/*" capture="camera">
         <img id="photoPreview" class="photo-preview" style="display:none;">
         <button class="success" onclick="uploadReport()" id="uploadBtn" style="display:none;">Отправить отчет</button>
+        <button class="success" onclick="completeWorkReport()" id="completeReportBtn" style="display:none; margin-top:10px;">Готово (завершить отчет)</button>
     </div>
     
     <!-- Вкладка История -->
@@ -406,8 +407,57 @@
                 fileInput.value = '';
                 document.getElementById('photoPreview').style.display = 'none';
                 document.getElementById('uploadBtn').style.display = 'none';
+                // Показываем кнопку "Готово" после успешной загрузки фото
+                document.getElementById('completeReportBtn').style.display = 'block';
             } else {
                 alert("Ошибка загрузки: " + await res.text());
+            }
+        } catch (e) {
+            alert("Ошибка соединения");
+        }
+    }
+
+    async function completeWorkReport() {
+        if (!currentWorkId) {
+            alert("Сначала начните смену");
+            return;
+        }
+
+        // Проверяем, загружено ли фото
+        const photoPreview = document.getElementById('photoPreview');
+        if (photoPreview.style.display === 'none' || !photoPreview.src || photoPreview.src === '') {
+            if (confirm("Фотоотчет не загружен. Завершить смену без фото?")) {
+                finishWork();
+            }
+            return;
+        }
+
+        if (confirm("Подтвердите завершение отчета. Смена будет завершена.")) {
+            finishWork();
+        }
+    }
+
+    async function finishWork() {
+        try {
+            const res = await fetch(`/api/work/finish/${currentWorkId}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ latitude: userLat, longitude: userLon })
+            });
+            
+            if (res.ok) {
+                alert("Отчет завершен! Смена окончена.");
+                isWorking = false;
+                currentWorkId = null;
+                updateUI(false);
+                clearInterval(notificationInterval);
+                document.getElementById('workTimer').textContent = '';
+                document.getElementById('completeReportBtn').style.display = 'none';
+                document.getElementById('photoPreview').style.display = 'none';
+                document.getElementById('uploadBtn').style.display = 'none';
+                document.getElementById('reportPhoto').value = '';
+            } else {
+                alert("Ошибка завершения отчета");
             }
         } catch (e) {
             alert("Ошибка соединения");
