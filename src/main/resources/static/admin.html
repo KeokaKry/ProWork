@@ -147,7 +147,30 @@
     <!-- Вкладка Отчеты -->
     <div id="reports" class="tab-content">
         <h2>Отчеты по сменам</h2>
-        <button class="primary" onclick="loadReports()">Обновить</button>
+        
+        <div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+            <h3>Фильтр отчетов</h3>
+            <label>Сотрудник:</label>
+            <select id="reportEmployeeSelect" style="width: 250px;">
+                <option value="">Все сотрудники</option>
+            </select>
+            <br>
+            <label>Начало периода:</label>
+            <input type="date" id="reportStartDate" style="width: 150px;">
+            <label>Конец периода:</label>
+            <input type="date" id="reportEndDate" style="width: 150px;">
+            <br>
+            <button class="primary" onclick="loadReportsWithFilter()" style="margin-top: 10px;">Применить фильтр</button>
+            <button onclick="clearReportFilter()" style="margin-top: 10px; background:#6c757d; color:white; border:none;">Сбросить</button>
+            
+            <div style="margin-top: 15px;">
+                <strong>Быстрые фильтры:</strong>
+                <button onclick="setReportPeriod('week')" style="margin-left: 10px;">За неделю</button>
+                <button onclick="setReportPeriod('month')" style="margin-left: 5px;">За месяц</button>
+            </div>
+        </div>
+        
+        <button class="primary" onclick="loadReports()">Обновить все</button>
         <table>
             <thead><tr><th>Сотрудник</th><th>Задание</th><th>Начало</th><th>Конец</th><th>Длительность</th><th>Фотоотчет</th><th>Статус</th></tr></thead>
             <tbody id="reportTable"></tbody>
@@ -315,7 +338,10 @@
             setTimeout(initMap, 100);
         }
         if(tabId === 'tasks') { loadEmployeesForTask(); loadTasks(); }
-        if(tabId === 'reports') loadReports();
+        if(tabId === 'reports') { 
+            loadEmployeesForReportFilter();
+            loadReports(); 
+        }
     }
 
     // --- Должности ---
@@ -461,10 +487,14 @@
 
     // --- Геозоны ---
     async function loadGeoZones() {
-        const res = await fetch('/api/geozones/with-employees');
+        const res = await fetch('/api/geozones');
         const data = await res.json();
         const list = document.getElementById('geoZonesList');
         list.innerHTML = '';
+        if (!data || data.length === 0) {
+            list.innerHTML = '<p style="color:#666;">Геозоны не найдены</p>';
+            return;
+        }
         data.forEach(z => {
             const employees = z.employees && z.employees.length > 0 ? 
                 z.employees.map(e => e.fullName).join(', ') : 'Нет сотрудников';
@@ -611,8 +641,57 @@
     async function loadReports() {
         const res = await fetch('/api/reports/all');
         const data = await res.json();
+        displayReports(data);
+    }
+    
+    async function loadReportsWithFilter() {
+        const employeeId = document.getElementById('reportEmployeeSelect').value;
+        const startDate = document.getElementById('reportStartDate').value;
+        const endDate = document.getElementById('reportEndDate').value;
+        
+        let url = '/api/reports/report?';
+        if (employeeId) url += `employeeId=${employeeId}&`;
+        if (startDate) url += `startDate=${startDate}T00:00:00&`;
+        if (endDate) url += `endDate=${endDate}T23:59:59`;
+        
+        const res = await fetch(url);
+        const data = await res.json();
+        displayReports(data);
+    }
+    
+    function clearReportFilter() {
+        document.getElementById('reportEmployeeSelect').value = '';
+        document.getElementById('reportStartDate').value = '';
+        document.getElementById('reportEndDate').value = '';
+        loadReports();
+    }
+    
+    function setReportPeriod(period) {
+        const now = new Date();
+        let startDate;
+        
+        if (period === 'week') {
+            // Начало недели (понедельник)
+            const dayOfWeek = now.getDay() || 7;
+            startDate = new Date(now);
+            startDate.setDate(now.getDate() - dayOfWeek + 1);
+        } else if (period === 'month') {
+            // Начало месяца
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        }
+        
+        document.getElementById('reportStartDate').value = startDate.toISOString().split('T')[0];
+        document.getElementById('reportEndDate').value = now.toISOString().split('T')[0];
+        loadReportsWithFilter();
+    }
+    
+    function displayReports(data) {
         const tbody = document.getElementById('reportTable');
         tbody.innerHTML = '';
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Отчетов не найдено</td></tr>';
+            return;
+        }
         data.forEach(r => {
             let duration = '-';
             if (r.startTime && r.endTime) {
@@ -630,14 +709,25 @@
             }
             
             tbody.innerHTML += `<tr>
-                <td>${r.employee.fullName}</td>
+                <td>${r.employee ? r.employee.fullName : '-'}</td>
                 <td>${r.dailyTask || '-'}</td>
                 <td>${r.startTime ? new Date(r.startTime).toLocaleString() : '-'}</td>
                 <td>${r.endTime ? new Date(r.endTime).toLocaleString() : '-'}</td>
                 <td>${duration}</td>
                 <td>${photoHtml}</td>
-                <td><span class="status-badge status-${r.status.toLowerCase()}">${r.status}</span></td>
+                <td><span class="status-badge status-${r.status ? r.status.toLowerCase() : 'pending'}">${r.status || 'PENDING'}</span></td>
             </tr>`;
+        });
+    }
+    
+    // Загрузка сотрудников для фильтра отчетов
+    async function loadEmployeesForReportFilter() {
+        const res = await fetch('/api/employees/list');
+        const data = await res.json();
+        const select = document.getElementById('reportEmployeeSelect');
+        select.innerHTML = '<option value="">Все сотрудники</option>';
+        data.forEach(e => {
+            select.innerHTML += `<option value="${e.id}">${e.fullName}</option>`;
         });
     }
 
