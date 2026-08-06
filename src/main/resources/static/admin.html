@@ -42,7 +42,8 @@
         <button onclick="showTab('employees')" id="btn-employees">Сотрудники</button>
         <button onclick="showTab('geozones')" id="btn-geozones">Геозоны</button>
         <button onclick="showTab('tasks')" id="btn-tasks">Задания</button>
-        <button onclick="showTab('reports')" id="btn-reports">Отчеты</button>
+        <button onclick="showTab('reports')" id="btn-reports">Отчет по периодам</button>
+        <button onclick="showTab('taskReports')" id="btn-taskReports">Отчет по заданиям</button>
     </nav>
 </header>
 
@@ -171,9 +172,30 @@
         </div>
         
         <button class="primary" onclick="loadReports()">Обновить все</button>
+        
+        <!-- Блок с итоговой информацией по зарплате -->
+        <div id="salarySummary" style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px; display: none;">
+            <h3>Итоговая информация за период</h3>
+            <p><strong>Количество смен:</strong> <span id="totalShifts">0</span></p>
+            <p><strong>Отработано часов:</strong> <span id="totalHours">0</span></p>
+            <p><strong>Заработная плата:</strong> <span id="totalSalary">0</span> руб.</p>
+        </div>
+        
         <table>
             <thead><tr><th>Сотрудник</th><th>Задание</th><th>Начало</th><th>Конец</th><th>Длительность</th><th>Фотоотчет</th><th>Статус</th></tr></thead>
             <tbody id="reportTable"></tbody>
+        </table>
+    </div>
+    
+    <!-- Вкладка Отчет по заданиям -->
+    <div id="taskReports" class="tab-content">
+        <h2>Отчет по выполненным и не выполненным заданиям</h2>
+        
+        <button class="primary" onclick="loadTaskReports()">Обновить</button>
+        
+        <table>
+            <thead><tr><th>Сотрудник</th><th>Задание</th><th>Статус</th><th>Начало смены</th><th>Конец смены</th><th>Фотоотчет</th></tr></thead>
+            <tbody id="taskReportTable"></tbody>
         </table>
     </div>
 </div>
@@ -510,7 +532,6 @@
             </div>`;
         });
     }
-
     async function saveGeoZone() {
         const id = document.getElementById('zoneId').value;
         const name = document.getElementById('zoneName').value;
@@ -572,15 +593,23 @@
         const zoneSel = document.getElementById('assignZoneSelect');
         const empSel = document.getElementById('assignEmpSelect');
         
+        // Загружаем геозоны в выпадающий список
         zoneSel.innerHTML = '<option value="">Выберите геозону</option>';
-        zones.forEach(z => {
-            zoneSel.innerHTML += `<option value="${z.id}">${z.name}</option>`;
-        });
+        if (zones && zones.length > 0) {
+            zones.forEach(z => {
+                zoneSel.innerHTML += `<option value="${z.id}">${z.name}</option>`;
+            });
+        } else {
+            zoneSel.innerHTML += '<option value="" disabled>Геозоны не найдены</option>';
+        }
         
+        // Загружаем сотрудников в выпадающий список
         empSel.innerHTML = '<option value="">Выберите сотрудника</option>';
-        emps.forEach(e => {
-            empSel.innerHTML += `<option value="${e.id}">${e.fullName}</option>`;
-        });
+        if (emps && emps.length > 0) {
+            emps.forEach(e => {
+                empSel.innerHTML += `<option value="${e.id}">${e.fullName}</option>`;
+            });
+        }
     }
 
     async function assignGeoZone() {
@@ -688,12 +717,21 @@
     function displayReports(data) {
         const tbody = document.getElementById('reportTable');
         tbody.innerHTML = '';
+        
+        // Сбрасываем итоговую информацию
+        let totalShifts = 0;
+        let totalHoursNum = 0;
+        let totalSalary = 0;
+        
         if (!data || data.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Отчетов не найдено</td></tr>';
+            document.getElementById('salarySummary').style.display = 'none';
             return;
         }
+        
         data.forEach(r => {
             let duration = '-';
+            let hoursNum = 0;
             if (r.startTime && r.endTime) {
                 const start = new Date(r.startTime);
                 const end = new Date(r.endTime);
@@ -701,6 +739,16 @@
                 const hours = Math.floor(diffMs / 3600000);
                 const minutes = Math.floor((diffMs % 3600000) / 60000);
                 duration = `${hours}ч ${minutes}мин`;
+                hoursNum = diffMs / 3600000; // часы в виде десятичной дроби
+                
+                // Подсчет итогов
+                totalShifts++;
+                totalHoursNum += hoursNum;
+                
+                // Расчет зарплаты на основе ставки должности сотрудника
+                if (r.employee && r.employee.position && r.employee.position.hourlyRate) {
+                    totalSalary += hoursNum * r.employee.position.hourlyRate;
+                }
             }
             
             let photoHtml = '-';
@@ -718,6 +766,12 @@
                 <td><span class="status-badge status-${r.status ? r.status.toLowerCase() : 'pending'}">${r.status || 'PENDING'}</span></td>
             </tr>`;
         });
+        
+        // Показываем итоговую информацию
+        document.getElementById('totalShifts').textContent = totalShifts;
+        document.getElementById('totalHours').textContent = totalHoursNum.toFixed(2);
+        document.getElementById('totalSalary').textContent = Math.round(totalSalary);
+        document.getElementById('salarySummary').style.display = 'block';
     }
     
     // Загрузка сотрудников для фильтра отчетов
