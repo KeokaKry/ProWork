@@ -1,39 +1,22 @@
 ```
-# Java build artifacts
+# Compiled and build artifacts
 *.class
-*.jar
-*.war
-*.ear
-
-# Maven/Gradle directories
 target/
-build/
-
-# IDE files
-.idea/
-*.iml
-*.ipr
-*.iws
-.vscode/
 
 # Dependencies
-lib/
-libs/
+.mvn/
+mvn/
 
-# Logs
+# Logs and temp files
 *.log
+*.tmp
+
+# Editors
+.vscode/
+.idea/
 
 # Environment
 .env
 .env.local
 *.env.*
-
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# Temporary files
-*.tmp
-*.temp
-*~
 ```
