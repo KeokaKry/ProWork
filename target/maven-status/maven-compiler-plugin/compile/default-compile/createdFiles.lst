@@ -1,6 +1,6 @@
 com/worktrcker/app/dto/LoginRequest.class
-com/worktrcker/app/AppApplication.class
 com/worktrcker/app/model/Employee.class
+com/worktrcker/app/AppApplication.class
 com/worktrcker/app/repository/WorkRecordRepository.class
 com/worktrcker/app/repository/PositionRepository.class
 com/worktrcker/app/model/GeoZone.class
@@ -13,7 +13,7 @@ com/worktrcker/app/controller/NotificationController.class
 com/worktrcker/app/repository/EmployeeRepository.class
 com/worktrcker/app/dto/StartWorkRequest.class
 com/worktrcker/app/controller/AuthController.class
-com/worktrcker/app/repository/GeoZoneRepository.class
 com/worktrcker/app/controller/EmployeeController.class
+com/worktrcker/app/repository/GeoZoneRepository.class
 com/worktrcker/app/model/WorkRecord.class
 com/worktrcker/app/controller/TaskController.class

@@ -145,9 +145,9 @@
         </table>
     </div>
 
-    <!-- Вкладка Отчеты -->
+    <!-- Вкладка Отчеты по периодам -->
     <div id="reports" class="tab-content">
-        <h2>Отчеты по сменам</h2>
+        <h2>Отчет по периодам</h2>
         
         <div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
             <h3>Фильтр отчетов</h3>
@@ -156,45 +156,81 @@
                 <option value="">Все сотрудники</option>
             </select>
             <br>
-            <label>Начало периода:</label>
-            <input type="date" id="reportStartDate" style="width: 150px;">
-            <label>Конец периода:</label>
-            <input type="date" id="reportEndDate" style="width: 150px;">
+            <label>Период:</label>
+            <select id="reportPeriodType" style="width: 150px;" onchange="toggleCustomPeriod()">
+                <option value="week">Неделя</option>
+                <option value="month">Месяц</option>
+                <option value="custom">Свой период</option>
+            </select>
+            <br>
+            <div id="customPeriodInputs" style="display:none; margin-top: 10px;">
+                <label>Начало периода:</label>
+                <input type="date" id="reportStartDate" style="width: 150px;">
+                <label>Конец периода:</label>
+                <input type="date" id="reportEndDate" style="width: 150px;">
+            </div>
             <br>
             <button class="primary" onclick="loadReportsWithFilter()" style="margin-top: 10px;">Применить фильтр</button>
             <button onclick="clearReportFilter()" style="margin-top: 10px; background:#6c757d; color:white; border:none;">Сбросить</button>
-            
-            <div style="margin-top: 15px;">
-                <strong>Быстрые фильтры:</strong>
-                <button onclick="setReportPeriod('week')" style="margin-left: 10px;">За неделю</button>
-                <button onclick="setReportPeriod('month')" style="margin-left: 5px;">За месяц</button>
-            </div>
-        </div>
-        
-        <button class="primary" onclick="loadReports()">Обновить все</button>
-        
-        <!-- Блок с итоговой информацией по зарплате -->
-        <div id="salarySummary" style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px; display: none;">
-            <h3>Итоговая информация за период</h3>
-            <p><strong>Количество смен:</strong> <span id="totalShifts">0</span></p>
-            <p><strong>Отработано часов:</strong> <span id="totalHours">0</span></p>
-            <p><strong>Заработная плата:</strong> <span id="totalSalary">0</span> руб.</p>
+            <button class="success" onclick="exportReportToExcel()" style="margin-top: 10px; margin-left: 10px;">Выгрузить в Excel</button>
         </div>
         
         <table>
-            <thead><tr><th>Сотрудник</th><th>Задание</th><th>Начало</th><th>Конец</th><th>Длительность</th><th>Фотоотчет</th><th>Статус</th></tr></thead>
+            <thead>
+                <tr>
+                    <th>ФИО</th>
+                    <th>Начало периода</th>
+                    <th>Конец периода</th>
+                    <th>Количество смен</th>
+                    <th>Отработано часов</th>
+                    <th>Ставка в час</th>
+                    <th>Общая заработная плата</th>
+                </tr>
+            </thead>
             <tbody id="reportTable"></tbody>
         </table>
     </div>
     
     <!-- Вкладка Отчет по заданиям -->
     <div id="taskReports" class="tab-content">
-        <h2>Отчет по выполненным и не выполненным заданиям</h2>
+        <h2>Отчет по заданиям</h2>
         
-        <button class="primary" onclick="loadTaskReports()">Обновить</button>
+        <div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+            <h3>Фильтр отчетов</h3>
+            <label>Сотрудник:</label>
+            <select id="taskReportEmployeeSelect" style="width: 250px;">
+                <option value="">Все сотрудники</option>
+            </select>
+            <br>
+            <label>Период:</label>
+            <select id="taskReportPeriodType" style="width: 150px;" onchange="toggleTaskCustomPeriod()">
+                <option value="day">День</option>
+                <option value="week">Неделя</option>
+                <option value="custom">Произвольный период</option>
+            </select>
+            <br>
+            <div id="taskCustomPeriodInputs" style="display:none; margin-top: 10px;">
+                <label>Начало периода:</label>
+                <input type="date" id="taskReportStartDate" style="width: 150px;">
+                <label>Конец периода:</label>
+                <input type="date" id="taskReportEndDate" style="width: 150px;">
+            </div>
+            <br>
+            <button class="primary" onclick="loadTaskReportsWithFilter()" style="margin-top: 10px;">Применить фильтр</button>
+            <button class="success" onclick="downloadAllPhotos()" style="margin-top: 10px; margin-left: 10px;">Выгрузить фото</button>
+        </div>
         
         <table>
-            <thead><tr><th>Сотрудник</th><th>Задание</th><th>Статус</th><th>Начало смены</th><th>Конец смены</th><th>Фотоотчет</th></tr></thead>
+            <thead>
+                <tr>
+                    <th>Задание</th>
+                    <th>Начало</th>
+                    <th>Конец</th>
+                    <th>Длительность</th>
+                    <th>Фотоотчет</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
             <tbody id="taskReportTable"></tbody>
         </table>
     </div>
@@ -362,7 +398,11 @@
         if(tabId === 'tasks') { loadEmployeesForTask(); loadTasks(); }
         if(tabId === 'reports') { 
             loadEmployeesForReportFilter();
-            loadReports(); 
+            loadReportsWithFilter(); 
+        }
+        if(tabId === 'taskReports') {
+            loadEmployeesForTaskReportFilter();
+            loadTaskReportsWithFilter();
         }
     }
 
@@ -595,19 +635,23 @@
         
         // Загружаем геозоны в выпадающий список
         zoneSel.innerHTML = '<option value="">Выберите геозону</option>';
-        if (zones && zones.length > 0) {
+        if (zones && Array.isArray(zones) && zones.length > 0) {
             zones.forEach(z => {
-                zoneSel.innerHTML += `<option value="${z.id}">${z.name}</option>`;
+                if (z && z.id && z.name) {
+                    zoneSel.innerHTML += `<option value="${z.id}">${z.name}</option>`;
+                }
             });
         } else {
-            zoneSel.innerHTML += '<option value="" disabled>Геозоны не найдены</option>';
+            zoneSel.innerHTML = '<option value="">Геозоны не найдены</option>';
         }
         
         // Загружаем сотрудников в выпадающий список
         empSel.innerHTML = '<option value="">Выберите сотрудника</option>';
-        if (emps && emps.length > 0) {
+        if (emps && Array.isArray(emps) && emps.length > 0) {
             emps.forEach(e => {
-                empSel.innerHTML += `<option value="${e.id}">${e.fullName}</option>`;
+                if (e && e.id && e.fullName) {
+                    empSel.innerHTML += `<option value="${e.id}">${e.fullName}</option>`;
+                }
             });
         }
     }
@@ -666,33 +710,57 @@
         });
     }
 
-    // --- Отчеты ---
-    async function loadReports() {
-        const res = await fetch('/api/reports/all');
-        const data = await res.json();
-        displayReports(data);
+    // --- Отчеты по периодам ---
+    function toggleCustomPeriod() {
+        const periodType = document.getElementById('reportPeriodType').value;
+        const customInputs = document.getElementById('customPeriodInputs');
+        if (periodType === 'custom') {
+            customInputs.style.display = 'block';
+        } else {
+            customInputs.style.display = 'none';
+            setReportPeriod(periodType);
+        }
     }
     
     async function loadReportsWithFilter() {
         const employeeId = document.getElementById('reportEmployeeSelect').value;
-        const startDate = document.getElementById('reportStartDate').value;
-        const endDate = document.getElementById('reportEndDate').value;
+        const periodType = document.getElementById('reportPeriodType').value;
+        let startDate, endDate;
         
-        let url = '/api/reports/report?';
+        if (periodType === 'custom') {
+            startDate = document.getElementById('reportStartDate').value;
+            endDate = document.getElementById('reportEndDate').value;
+        } else {
+            const now = new Date();
+            if (periodType === 'week') {
+                const dayOfWeek = now.getDay() || 7;
+                const start = new Date(now);
+                start.setDate(now.getDate() - dayOfWeek + 1);
+                startDate = start.toISOString().split('T')[0];
+            } else if (periodType === 'month') {
+                const start = new Date(now.getFullYear(), now.getMonth(), 1);
+                startDate = start.toISOString().split('T')[0];
+            }
+            endDate = now.toISOString().split('T')[0];
+        }
+        
+        let url = '/api/reports/period-report?';
         if (employeeId) url += `employeeId=${employeeId}&`;
         if (startDate) url += `startDate=${startDate}T00:00:00&`;
         if (endDate) url += `endDate=${endDate}T23:59:59`;
         
         const res = await fetch(url);
         const data = await res.json();
-        displayReports(data);
+        displayPeriodReport(data);
     }
     
     function clearReportFilter() {
         document.getElementById('reportEmployeeSelect').value = '';
+        document.getElementById('reportPeriodType').value = 'week';
         document.getElementById('reportStartDate').value = '';
         document.getElementById('reportEndDate').value = '';
-        loadReports();
+        document.getElementById('customPeriodInputs').style.display = 'none';
+        loadReportsWithFilter();
     }
     
     function setReportPeriod(period) {
@@ -700,38 +768,197 @@
         let startDate;
         
         if (period === 'week') {
-            // Начало недели (понедельник)
             const dayOfWeek = now.getDay() || 7;
-            startDate = new Date(now);
-            startDate.setDate(now.getDate() - dayOfWeek + 1);
+            const start = new Date(now);
+            start.setDate(now.getDate() - dayOfWeek + 1);
+            startDate = start.toISOString().split('T')[0];
         } else if (period === 'month') {
-            // Начало месяца
-            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            const start = new Date(now.getFullYear(), now.getMonth(), 1);
+            startDate = start.toISOString().split('T')[0];
+        } else {
+            return;
         }
         
-        document.getElementById('reportStartDate').value = startDate.toISOString().split('T')[0];
+        document.getElementById('reportStartDate').value = startDate;
         document.getElementById('reportEndDate').value = now.toISOString().split('T')[0];
-        loadReportsWithFilter();
     }
     
-    function displayReports(data) {
+    function displayPeriodReport(data) {
         const tbody = document.getElementById('reportTable');
         tbody.innerHTML = '';
         
-        // Сбрасываем итоговую информацию
-        let totalShifts = 0;
-        let totalHoursNum = 0;
-        let totalSalary = 0;
-        
         if (!data || data.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Отчетов не найдено</td></tr>';
-            document.getElementById('salarySummary').style.display = 'none';
+            return;
+        }
+        
+        // Группируем данные по сотрудникам
+        const employeeData = {};
+        data.forEach(r => {
+            const empId = r.employee ? r.employee.id : 'unknown';
+            if (!employeeData[empId]) {
+                employeeData[empId] = {
+                    fullName: r.employee ? r.employee.fullName : '-',
+                    hourlyRate: r.employee && r.employee.position ? r.employee.position.hourlyRate : 0,
+                    shifts: 0,
+                    totalHours: 0,
+                    minDate: null,
+                    maxDate: null
+                };
+            }
+            
+            employeeData[empId].shifts++;
+            
+            if (r.startTime && r.endTime) {
+                const start = new Date(r.startTime);
+                const end = new Date(r.endTime);
+                const hoursNum = (end - start) / 3600000;
+                employeeData[empId].totalHours += hoursNum;
+                
+                if (!employeeData[empId].minDate || start < employeeData[empId].minDate) {
+                    employeeData[empId].minDate = start;
+                }
+                if (!employeeData[empId].maxDate || end > employeeData[empId].maxDate) {
+                    employeeData[empId].maxDate = end;
+                }
+            }
+        });
+        
+        // Отображаем данные по каждому сотруднику
+        Object.values(employeeData).forEach(emp => {
+            const salary = emp.totalHours * emp.hourlyRate;
+            const startDateStr = emp.minDate ? emp.minDate.toLocaleDateString() : '-';
+            const endDateStr = emp.maxDate ? emp.maxDate.toLocaleDateString() : '-';
+            
+            tbody.innerHTML += `<tr>
+                <td>${emp.fullName}</td>
+                <td>${startDateStr}</td>
+                <td>${endDateStr}</td>
+                <td>${emp.shifts}</td>
+                <td>${emp.totalHours.toFixed(2)}</td>
+                <td>${emp.hourlyRate}</td>
+                <td>${Math.round(salary)}</td>
+            </tr>`;
+        });
+    }
+    
+    function exportReportToExcel() {
+        const table = document.querySelector('#reportTable').closest('table');
+        let csv = [];
+        
+        // Заголовки
+        const headers = [];
+        table.querySelectorAll('thead th').forEach(th => {
+            headers.push(th.textContent.trim());
+        });
+        csv.push(headers.join(';'));
+        
+        // Данные
+        table.querySelectorAll('tbody tr').forEach(tr => {
+            const row = [];
+            tr.querySelectorAll('td').forEach(td => {
+                row.push(td.textContent.trim());
+            });
+            csv.push(row.join(';'));
+        });
+        
+        const csvContent = '\uFEFF' + csv.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'otchet_po_periodam.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+    
+    // Загрузка сотрудников для фильтра отчетов по периодам
+    async function loadEmployeesForReportFilter() {
+        const res = await fetch('/api/employees/list');
+        const data = await res.json();
+        const select = document.getElementById('reportEmployeeSelect');
+        select.innerHTML = '<option value="">Все сотрудники</option>';
+        data.forEach(e => {
+            select.innerHTML += `<option value="${e.id}">${e.fullName}</option>`;
+        });
+    }
+
+    // --- Отчет по заданиям ---
+    function toggleTaskCustomPeriod() {
+        const periodType = document.getElementById('taskReportPeriodType').value;
+        const customInputs = document.getElementById('taskCustomPeriodInputs');
+        if (periodType === 'custom') {
+            customInputs.style.display = 'block';
+        } else {
+            customInputs.style.display = 'none';
+            setTaskReportPeriod(periodType);
+        }
+    }
+    
+    async function loadTaskReportsWithFilter() {
+        const employeeId = document.getElementById('taskReportEmployeeSelect').value;
+        const periodType = document.getElementById('taskReportPeriodType').value;
+        let startDate, endDate;
+        
+        if (periodType === 'custom') {
+            startDate = document.getElementById('taskReportStartDate').value;
+            endDate = document.getElementById('taskReportEndDate').value;
+        } else {
+            const now = new Date();
+            if (periodType === 'day') {
+                startDate = now.toISOString().split('T')[0];
+                endDate = startDate;
+            } else if (periodType === 'week') {
+                const dayOfWeek = now.getDay() || 7;
+                const start = new Date(now);
+                start.setDate(now.getDate() - dayOfWeek + 1);
+                startDate = start.toISOString().split('T')[0];
+                endDate = now.toISOString().split('T')[0];
+            }
+        }
+        
+        let url = '/api/reports/task-report?';
+        if (employeeId) url += `employeeId=${employeeId}&`;
+        if (startDate) url += `startDate=${startDate}T00:00:00&`;
+        if (endDate) url += `endDate=${endDate}T23:59:59`;
+        
+        const res = await fetch(url);
+        const data = await res.json();
+        displayTaskReport(data);
+    }
+    
+    function setTaskReportPeriod(period) {
+        const now = new Date();
+        let startDate, endDate;
+        
+        if (period === 'day') {
+            startDate = now.toISOString().split('T')[0];
+            endDate = startDate;
+        } else if (period === 'week') {
+            const dayOfWeek = now.getDay() || 7;
+            const start = new Date(now);
+            start.setDate(now.getDate() - dayOfWeek + 1);
+            startDate = start.toISOString().split('T')[0];
+            endDate = now.toISOString().split('T')[0];
+        }
+        
+        document.getElementById('taskReportStartDate').value = startDate;
+        document.getElementById('taskReportEndDate').value = endDate;
+    }
+    
+    function displayTaskReport(data) {
+        const tbody = document.getElementById('taskReportTable');
+        tbody.innerHTML = '';
+        
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Заданий не найдено</td></tr>';
             return;
         }
         
         data.forEach(r => {
             let duration = '-';
-            let hoursNum = 0;
             if (r.startTime && r.endTime) {
                 const start = new Date(r.startTime);
                 const end = new Date(r.endTime);
@@ -739,25 +966,15 @@
                 const hours = Math.floor(diffMs / 3600000);
                 const minutes = Math.floor((diffMs % 3600000) / 60000);
                 duration = `${hours}ч ${minutes}мин`;
-                hoursNum = diffMs / 3600000; // часы в виде десятичной дроби
-                
-                // Подсчет итогов
-                totalShifts++;
-                totalHoursNum += hoursNum;
-                
-                // Расчет зарплаты на основе ставки должности сотрудника
-                if (r.employee && r.employee.position && r.employee.position.hourlyRate) {
-                    totalSalary += hoursNum * r.employee.position.hourlyRate;
-                }
             }
             
             let photoHtml = '-';
             if (r.reportPhotoUrl) {
-                photoHtml = `<a href="${r.reportPhotoUrl}" target="_blank"><img src="${r.reportPhotoUrl}" class="report-photo" alt="Фотоотчет"></a>`;
+                const photoName = r.employee ? transliterate(r.employee.fullName) + '_' + (r.startTime ? new Date(r.startTime).toISOString().split('T')[0] : 'nodate') : 'photo';
+                photoHtml = `<a href="${r.reportPhotoUrl}" target="_blank" download="${photoName}.jpg"><img src="${r.reportPhotoUrl}" class="report-photo" alt="Фотоотчет"></a>`;
             }
             
             tbody.innerHTML += `<tr>
-                <td>${r.employee ? r.employee.fullName : '-'}</td>
                 <td>${r.dailyTask || '-'}</td>
                 <td>${r.startTime ? new Date(r.startTime).toLocaleString() : '-'}</td>
                 <td>${r.endTime ? new Date(r.endTime).toLocaleString() : '-'}</td>
@@ -766,19 +983,49 @@
                 <td><span class="status-badge status-${r.status ? r.status.toLowerCase() : 'pending'}">${r.status || 'PENDING'}</span></td>
             </tr>`;
         });
-        
-        // Показываем итоговую информацию
-        document.getElementById('totalShifts').textContent = totalShifts;
-        document.getElementById('totalHours').textContent = totalHoursNum.toFixed(2);
-        document.getElementById('totalSalary').textContent = Math.round(totalSalary);
-        document.getElementById('salarySummary').style.display = 'block';
     }
     
-    // Загрузка сотрудников для фильтра отчетов
-    async function loadEmployeesForReportFilter() {
+    // Транслитерация ФИО для имен файлов
+    function transliterate(text) {
+        const converter = {
+            'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo', 'ж': 'zh',
+            'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o',
+            'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'h', 'ц': 'c',
+            'ч': 'ch', 'ш': 'sh', 'щ': 'sch', 'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu',
+            'я': 'ya', ' ': '_'
+        };
+        return text.toLowerCase().split('').map(char => converter[char] || char).join('');
+    }
+    
+    async function downloadAllPhotos() {
+        const rows = document.querySelectorAll('#taskReportTable tr');
+        for (const row of rows) {
+            const img = row.querySelector('img');
+            if (img) {
+                const link = img.parentElement;
+                const employeeCell = row.cells[0];
+                const dateCell = row.cells[1];
+                
+                let employeeName = '';
+                if (row.cells.length > 0) {
+                    // Получаем имя сотрудника из данных таблицы или используем "employee"
+                    employeeName = 'employee';
+                }
+                
+                const date = dateCell ? new Date(dateCell.textContent).toISOString().split('T')[0] : 'nodate';
+                const fileName = employeeName + '_' + date + '.jpg';
+                
+                link.setAttribute('download', fileName);
+            }
+        }
+        alert('Фото готовы к скачиванию. Кликните на каждое фото для загрузки.');
+    }
+    
+    // Загрузка сотрудников для фильтра отчетов по заданиям
+    async function loadEmployeesForTaskReportFilter() {
         const res = await fetch('/api/employees/list');
         const data = await res.json();
-        const select = document.getElementById('reportEmployeeSelect');
+        const select = document.getElementById('taskReportEmployeeSelect');
         select.innerHTML = '<option value="">Все сотрудники</option>';
         data.forEach(e => {
             select.innerHTML += `<option value="${e.id}">${e.fullName}</option>`;

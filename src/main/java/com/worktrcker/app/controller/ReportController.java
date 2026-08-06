@@ -72,9 +72,9 @@ public class ReportController {
         return ResponseEntity.ok(workRecordRepository.findByEmployeeId(employeeId));
     }
     
-    // Отчет по сменам за период (для админа)
-    @GetMapping("/report")
-    public ResponseEntity<List<WorkRecord>> getWorkRecordsReport(
+    // Получить отчеты по периодам (для админа) - сгруппированные по сотрудникам
+    @GetMapping("/period-report")
+    public ResponseEntity<List<WorkRecord>> getPeriodReport(
             @RequestParam(required = false) Long employeeId,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
@@ -82,10 +82,41 @@ public class ReportController {
         List<WorkRecord> records;
         
         if (employeeId != null) {
-            // Отчет по конкретному сотруднику
             records = workRecordRepository.findByEmployeeId(employeeId);
         } else {
-            // Отчет по всем сотрудникам
+            records = workRecordRepository.findAll();
+        }
+        
+        // Фильтрация по датам если указаны
+        if (startDate != null) {
+            LocalDateTime startDateTime = LocalDateTime.parse(startDate);
+            records = records.stream()
+                .filter(r -> r.getStartTime() != null && !r.getStartTime().isBefore(startDateTime))
+                .toList();
+        }
+        
+        if (endDate != null) {
+            LocalDateTime endDateTime = LocalDateTime.parse(endDate);
+            records = records.stream()
+                .filter(r -> r.getEndTime() != null && !r.getEndTime().isAfter(endDateTime))
+                .toList();
+        }
+        
+        return ResponseEntity.ok(records);
+    }
+    
+    // Получить отчет по заданиям (для админа)
+    @GetMapping("/task-report")
+    public ResponseEntity<List<WorkRecord>> getTaskReport(
+            @RequestParam(required = false) Long employeeId,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        
+        List<WorkRecord> records;
+        
+        if (employeeId != null) {
+            records = workRecordRepository.findByEmployeeId(employeeId);
+        } else {
             records = workRecordRepository.findAll();
         }
         
