@@ -122,6 +122,7 @@
                 <option value="">Выберите сотрудника</option>
             </select>
             <button class="success" onclick="assignGeoZone()">Назначить</button>
+            <div id="assignMessage" style="margin-top: 10px; padding: 10px; border-radius: 4px; display: none;"></div>
         </div>
     </div>
 
@@ -659,14 +660,43 @@
     async function assignGeoZone() {
         const zoneId = document.getElementById('assignZoneSelect').value;
         const empId = document.getElementById('assignEmpSelect').value;
+        const messageDiv = document.getElementById('assignMessage');
         
-        if (!zoneId || !empId) { alert('Выберите геозону и сотрудника'); return; }
+        if (!zoneId || !empId) { 
+            showMessage('Выберите геозону и сотрудника', 'error');
+            return; 
+        }
+        
+        // Сначала получаем информацию о текущем сотруднике, чтобы узнать его имя
+        const empResponse = await fetch(`/api/employees/${empId}`);
+        const employeeData = await empResponse.json();
+        const employeeName = employeeData.fullName || 'Сотруднику';
+        
+        // Получаем информацию о геозоне для отображения названия
+        const zoneResponse = await fetch(`/api/geozones/${zoneId}`);
+        const zoneData = await zoneResponse.json();
+        const zoneName = zoneData.name || 'Геозона';
         
         await fetch(`/api/geozones/${zoneId}/assign/${empId}`, { method: 'POST' });
-        alert('Геозона назначена');
+        
+        showMessage(`Сотруднику ${employeeName} назначена геозона "${zoneName}"`, 'success');
+        
         loadEmployees();
         loadGeoZones();
         loadEmployeesForGeoAssign();
+    }
+
+    function showMessage(text, type) {
+        const messageDiv = document.getElementById('assignMessage');
+        messageDiv.textContent = text;
+        messageDiv.style.display = 'block';
+        messageDiv.style.backgroundColor = type === 'success' ? '#d4edda' : '#f8d7da';
+        messageDiv.style.color = type === 'success' ? '#155724' : '#721c24';
+        
+        // Скрыть сообщение через 5 секунд
+        setTimeout(() => {
+            messageDiv.style.display = 'none';
+        }, 5000);
     }
 
     // --- Задания ---

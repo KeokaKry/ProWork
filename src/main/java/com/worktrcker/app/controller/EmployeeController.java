@@ -27,6 +27,14 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeRepository.findAllWithGeoZones());
     }
 
+    // Получить сотрудника по ID с геозонами
+    @GetMapping("/{id}")
+    public ResponseEntity<Employee> getEmployeeById(@PathVariable Long id) {
+        return employeeRepository.findByIdWithGeoZones(id)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
+
     // Создать сотрудника (Только Админ)
     @PostMapping
     public ResponseEntity<Employee> createEmployee(@RequestBody Employee employee) {

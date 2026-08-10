@@ -15,4 +15,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     
     @Query("SELECT DISTINCT e FROM Employee e LEFT JOIN FETCH e.geoZones")
     List<Employee> findAllWithGeoZones();
+    
+    @Query("SELECT DISTINCT e FROM Employee e LEFT JOIN FETCH e.geoZones WHERE e.id = :id")
+    Optional<Employee> findByIdWithGeoZones(Long id);
 }
