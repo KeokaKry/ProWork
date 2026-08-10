@@ -1,17 +1,14 @@
 ```
 # Compiled and build artifacts
 *.class
+*.o
+*.obj
+*.out
 target/
-# Dependencies
+
 # Logs and temp files
 *.log
-*.tmp
-*.swp
-# Environment
-.env
-.env.local
-*.env.*
-# Editors
-.vscode/
-.idea/
+
+# Maven build files
+target/maven-status/
 ```
