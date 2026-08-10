@@ -639,7 +639,7 @@
         if (zones && Array.isArray(zones) && zones.length > 0) {
             zones.forEach(z => {
                 if (z && z.id && z.name) {
-                    zoneSel.innerHTML += `<option value="${z.id}">${z.name}</option>`;
+                    zoneSel.innerHTML += `<option value="${z.id}" data-lat="${z.latitude}" data-lon="${z.longitude}" data-radius="${z.radius}">${z.name}</option>`;
                 }
             });
         } else {
@@ -655,6 +655,23 @@
                 }
             });
         }
+        
+        // Добавляем обработчик изменения выбора геозоны
+        zoneSel.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const lat = selectedOption.getAttribute('data-lat');
+            const lon = selectedOption.getAttribute('data-lon');
+            const radius = selectedOption.getAttribute('data-radius');
+            
+            if (lat && lon && radius) {
+                document.getElementById('zoneLat').value = lat;
+                document.getElementById('zoneLon').value = lon;
+                document.getElementById('zoneRadius').value = radius;
+                document.getElementById('radiusSlider').value = radius;
+                document.getElementById('radiusValue').textContent = radius + ' м';
+                updateMapVisual();
+            }
+        });
     }
 
     async function assignGeoZone() {
