@@ -572,6 +572,8 @@
                 </div>
             </div>`;
         });
+        // Обновляем выпадающий список для назначения геозон
+        loadGeoZonesForAssign();
     }
     async function saveGeoZone() {
         const id = document.getElementById('zoneId').value;
@@ -655,24 +657,55 @@
                 }
             });
         }
-        
-        // Добавляем обработчик изменения выбора геозоны
-        zoneSel.addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            const lat = selectedOption.getAttribute('data-lat');
-            const lon = selectedOption.getAttribute('data-lon');
-            const radius = selectedOption.getAttribute('data-radius');
-            
-            if (lat && lon && radius) {
-                document.getElementById('zoneLat').value = lat;
-                document.getElementById('zoneLon').value = lon;
-                document.getElementById('zoneRadius').value = radius;
-                document.getElementById('radiusSlider').value = radius;
-                document.getElementById('radiusValue').textContent = radius + ' м';
-                updateMapVisual();
-            }
-        });
     }
+    
+    // Функция для обновления только списка геозон (вызывается после добавления/удаления геозоны)
+    async function loadGeoZonesForAssign() {
+        const zonesRes = await fetch('/api/geozones');
+        const zones = await zonesRes.json();
+        
+        const zoneSel = document.getElementById('assignZoneSelect');
+        const currentSelection = zoneSel.value;
+        
+        // Сохраняем текущий выбор если он есть
+        zoneSel.innerHTML = '<option value="">Выберите геозону</option>';
+        if (zones && Array.isArray(zones) && zones.length > 0) {
+            zones.forEach(z => {
+                if (z && z.id && z.name) {
+                    zoneSel.innerHTML += `<option value="${z.id}" data-lat="${z.latitude}" data-lon="${z.longitude}" data-radius="${z.radius}">${z.name}</option>`;
+                }
+            });
+        } else {
+            zoneSel.innerHTML = '<option value="">Геозоны не найдены</option>';
+        }
+        
+        // Восстанавливаем выбор если возможно
+        if (currentSelection && zones.some(z => z && z.id == currentSelection)) {
+            zoneSel.value = currentSelection;
+        }
+    }
+    
+    // Добавляем обработчик изменения выбора геозоны один раз при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        const zoneSel = document.getElementById('assignZoneSelect');
+        if (zoneSel) {
+            zoneSel.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const lat = selectedOption.getAttribute('data-lat');
+                const lon = selectedOption.getAttribute('data-lon');
+                const radius = selectedOption.getAttribute('data-radius');
+                
+                if (lat && lon && radius) {
+                    document.getElementById('zoneLat').value = lat;
+                    document.getElementById('zoneLon').value = lon;
+                    document.getElementById('zoneRadius').value = radius;
+                    document.getElementById('radiusSlider').value = radius;
+                    document.getElementById('radiusValue').textContent = radius + ' м';
+                    updateMapVisual();
+                }
+            });
+        }
+    });
 
     async function assignGeoZone() {
         const zoneId = document.getElementById('assignZoneSelect').value;
