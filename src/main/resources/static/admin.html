@@ -665,6 +665,8 @@
         await fetch(`/api/geozones/${zoneId}/assign/${empId}`, { method: 'POST' });
         alert('Геозона назначена');
         loadEmployees();
+        loadGeoZones();
+        loadEmployeesForGeoAssign();
     }
 
     // --- Задания ---
