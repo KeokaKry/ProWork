@@ -27,6 +27,13 @@ public class GeoZoneController {
         return ResponseEntity.ok(geoZoneRepository.findAllWithEmployees());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<GeoZone> getGeoZoneById(@PathVariable Long id) {
+        return geoZoneRepository.findById(id)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
+
     @PostMapping
     public ResponseEntity<GeoZone> createGeoZone(@RequestBody GeoZone geoZone) {
         return ResponseEntity.ok(geoZoneRepository.save(geoZone));
@@ -51,7 +58,7 @@ public class GeoZoneController {
         return ResponseEntity.ok().build();
     }
     
-    // Назначить геозону сотруднику
+    // Назначить геозону сотруднику (предыдущая геозона удаляется)
     @PostMapping("/{geoZoneId}/assign/{employeeId}")
     public ResponseEntity<Employee> assignGeoZoneToEmployee(@PathVariable Long geoZoneId, @PathVariable Long employeeId) {
         return geoZoneRepository.findById(geoZoneId)
@@ -59,9 +66,10 @@ public class GeoZoneController {
                 if (employee.getGeoZones() == null) {
                     employee.setGeoZones(new java.util.ArrayList<>());
                 }
-                if (!employee.getGeoZones().contains(geoZone)) {
-                    employee.getGeoZones().add(geoZone);
-                }
+                // Очищаем все предыдущие геозоны
+                employee.getGeoZones().clear();
+                // Добавляем новую геозону
+                employee.getGeoZones().add(geoZone);
                 return ResponseEntity.ok(employeeRepository.save(employee));
             }))
             .orElse(ResponseEntity.notFound().build());
