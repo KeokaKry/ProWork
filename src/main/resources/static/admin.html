@@ -1053,7 +1053,9 @@
             let photoHtml = '-';
             if (r.reportPhotoUrl) {
                 const photoName = r.employee ? transliterate(r.employee.fullName) + '_' + (r.startTime ? new Date(r.startTime).toISOString().split('T')[0] : 'nodate') : 'photo';
-                photoHtml = `<a href="${r.reportPhotoUrl}" target="_blank" download="${photoName}.jpg"><img src="${r.reportPhotoUrl}" class="report-photo" alt="Фотоотчет"></a>`;
+                // Извлекаем имя файла из URL
+                const fileName = r.reportPhotoUrl.substring(r.reportPhotoUrl.lastIndexOf('/') + 1);
+                photoHtml = `<a href="/api/reports/download/${fileName}" target="_blank" class="photo-download-link" data-filename="${photoName}.jpg"><img src="${r.reportPhotoUrl}" class="report-photo" alt="Фотоотчет"></a>`;
             }
             
             tbody.innerHTML += `<tr>
@@ -1080,27 +1082,38 @@
     }
     
     async function downloadAllPhotos() {
-        const rows = document.querySelectorAll('#taskReportTable tr');
-        for (const row of rows) {
-            const img = row.querySelector('img');
-            if (img) {
-                const link = img.parentElement;
-                const employeeCell = row.cells[0];
-                const dateCell = row.cells[1];
+        const links = document.querySelectorAll('.photo-download-link');
+        if (links.length === 0) {
+            alert('Нет фото для скачивания');
+            return;
+        }
+        
+        for (const link of links) {
+            const filename = link.getAttribute('data-filename');
+            const photoUrl = link.getAttribute('href');
+            
+            try {
+                // Загружаем фото как blob
+                const response = await fetch(photoUrl);
+                const blob = await response.blob();
                 
-                let employeeName = '';
-                if (row.cells.length > 0) {
-                    // Получаем имя сотрудника из данных таблицы или используем "employee"
-                    employeeName = 'employee';
-                }
+                // Создаем временную ссылку для скачивания
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(downloadUrl);
                 
-                const date = dateCell ? new Date(dateCell.textContent).toISOString().split('T')[0] : 'nodate';
-                const fileName = employeeName + '_' + date + '.jpg';
-                
-                link.setAttribute('download', fileName);
+                // Небольшая задержка между скачиваниями
+                await new Promise(resolve => setTimeout(resolve, 500));
+            } catch (e) {
+                console.error('Ошибка скачивания фото:', e);
             }
         }
-        alert('Фото готовы к скачиванию. Кликните на каждое фото для загрузки.');
+        alert('Скачивание фото завершено');
     }
     
     // Загрузка сотрудников для фильтра отчетов по заданиям

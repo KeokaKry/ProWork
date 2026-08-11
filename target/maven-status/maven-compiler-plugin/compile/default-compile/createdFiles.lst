@@ -3,8 +3,8 @@ com/worktrcker/app/AppApplication.class
 com/worktrcker/app/model/Employee.class
 com/worktrcker/app/repository/WorkRecordRepository.class
 com/worktrcker/app/repository/PositionRepository.class
-com/worktrcker/app/controller/PositionController.class
 com/worktrcker/app/model/GeoZone.class
+com/worktrcker/app/controller/PositionController.class
 com/worktrcker/app/model/Position.class
 com/worktrcker/app/controller/ReportController.class
 com/worktrcker/app/controller/WorkController.class
