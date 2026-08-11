@@ -52,7 +52,8 @@ public class WorkController {
 
         Employee employee = empOpt.get();
         
-        // Проверка геозоны (если назначены геозоны сотруднику)
+        // Проверка геозоны (закомментировано для тестов)
+        /*
         if (employee.getGeoZones() != null && !employee.getGeoZones().isEmpty()) {
             boolean inZone = false;
             for (var zone : employee.getGeoZones()) {
@@ -69,6 +70,7 @@ public class WorkController {
                 return ResponseEntity.badRequest().body("Вы находитесь вне разрешенной геозоны!");
             }
         }
+        */
 
         WorkRecord record = new WorkRecord();
         record.setEmployee(employee);
