@@ -76,10 +76,21 @@ public class EmployeeController {
         employeeRepository.findById(id).ifPresent(employee -> {
             // Обнуляем связи перед удалением
             employee.setPosition(null);
-            // Для many-to-many связи нужно очистить коллекцию
-            if (employee.getGeoZones() != null) {
+            
+            // Для many-to-many связи нужно очистить коллекцию с обеих сторон
+            if (employee.getGeoZones() != null && !employee.getGeoZones().isEmpty()) {
+                // Создаем копию коллекции для избежания ConcurrentModificationException
+                var geoZonesCopy = List.copyOf(employee.getGeoZones());
+                for (var geoZone : geoZonesCopy) {
+                    // Удаляем сотрудника из списка employees каждой геозоны
+                    if (geoZone.getEmployees() != null) {
+                        geoZone.getEmployees().remove(employee);
+                    }
+                }
+                // Очищаем коллекцию geoZones у сотрудника
                 employee.getGeoZones().clear();
             }
+            
             employeeRepository.save(employee);
             employeeRepository.flush();
         });
