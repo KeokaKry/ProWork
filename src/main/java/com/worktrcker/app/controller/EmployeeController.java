@@ -76,8 +76,12 @@ public class EmployeeController {
         employeeRepository.findById(id).ifPresent(employee -> {
             // Обнуляем связи перед удалением
             employee.setPosition(null);
-            employee.setGeoZones(null);
+            // Для many-to-many связи нужно очистить коллекцию
+            if (employee.getGeoZones() != null) {
+                employee.getGeoZones().clear();
+            }
             employeeRepository.save(employee);
+            employeeRepository.flush();
         });
         employeeRepository.deleteById(id);
         return ResponseEntity.ok().build();

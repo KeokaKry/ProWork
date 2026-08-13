@@ -1,12 +1,37 @@
 ```
-# Java/Maven build artifacts
-target/
+# Compiled and build artifacts
 *.class
-*.jar
-*.war
-*.ear
+target/
 
-# Maven-specific
-.mvn/
-mvn/
+# Dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+.gradle/
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Editors
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# System
+.DS_Store
+Thumbs.db
 ```
