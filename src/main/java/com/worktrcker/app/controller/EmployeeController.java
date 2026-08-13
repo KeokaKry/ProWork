@@ -5,6 +5,7 @@ import com.worktrcker.app.repository.EmployeeRepository;
 import com.worktrcker.app.repository.PositionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -70,7 +71,14 @@ public class EmployeeController {
     
     // Уволить сотрудника (удаление)
     @DeleteMapping("/{id}")
+    @Transactional
     public ResponseEntity<Void> deleteEmployee(@PathVariable Long id) {
+        employeeRepository.findById(id).ifPresent(employee -> {
+            // Обнуляем связи перед удалением
+            employee.setPosition(null);
+            employee.setGeoZones(null);
+            employeeRepository.save(employee);
+        });
         employeeRepository.deleteById(id);
         return ResponseEntity.ok().build();
     }

@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Админ Панель</title>
+    <!-- Подключение Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body { font-family: sans-serif; margin: 0; background: #f4f6f9; }
+        #map { height: 400px; width: 100%; border: 1px solid #ddd; margin: 10px 0; }
         header { background: #343a40; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; }
         nav button { background: none; border: none; color: #ccc; font-size: 16px; cursor: pointer; margin-left: 15px; }
         nav button.active { color: white; font-weight: bold; border-bottom: 2px solid white; }
@@ -28,13 +31,14 @@
         .status-active { background: #d4edda; color: #155724; }
         .status-completed { background: #cce5ff; color: #004085; }
         .status-pending { background: #fff3cd; color: #856404; }
-        #map { position: relative; background: #e9ecef; overflow: hidden; }
-        .map-marker { position: absolute; width: 20px; height: 20px; background: #007bff; border: 3px solid white; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-        .map-circle { position: absolute; border: 2px solid #007bff; background: rgba(0, 123, 255, 0.2); border-radius: 50%; transform: translate(-50%, -50%); }
+        
+        /* Стили для админ-панели */
+        #adminContent { display: block; }
     </style>
 </head>
 <body>
 
+<div id="adminContent">
 <header>
     <h1>Админ Панель</h1>
     <nav>
@@ -46,7 +50,6 @@
         <button onclick="showTab('taskReports')" id="btn-taskReports">Отчет по заданиям</button>
     </nav>
 </header>
-
 <div class="container">
     <!-- Вкладка Должности -->
     <div id="positions" class="tab-content">
@@ -240,147 +243,82 @@
 <script>
     // Карта и геозоны
     let map = null;
-    let mapCenter = { lat: 55.751244, lon: 37.618423 }; // Москва по умолчанию
-    let mapRadius = 500;
+    let leafletMap = null;
     let mapMarker = null;
     let mapCircle = null;
-    let isDragging = false;
 
     function initMap() {
         const mapEl = document.getElementById('map');
         if (!mapEl) return;
         
-        updateMapVisual();
+        // Проверяем, загружен ли Leaflet
+        if (typeof L === 'undefined') {
+            console.log('Leaflet еще не загружен, ждем...');
+            setTimeout(initMap, 500);
+            return;
+        }
         
-        // Обработка клика для установки центра
-        mapEl.addEventListener('click', function(e) {
-            const rect = mapEl.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+        // Инициализируем карту Leaflet только один раз
+        if (!leafletMap) {
+            const centerLat = parseFloat(document.getElementById('zoneLat').value) || 55.751244;
+            const centerLon = parseFloat(document.getElementById('zoneLon').value) || 37.618423;
+            const radius = parseFloat(document.getElementById('zoneRadius').value) || 500;
             
-            const coords = pixelToCoords(x, y);
-            document.getElementById('zoneLat').value = coords.lat.toFixed(6);
-            document.getElementById('zoneLon').value = coords.lon.toFixed(6);
+            leafletMap = L.map('map').setView([centerLat, centerLon], 10);
             
-            updateMapVisual();
-        });
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(leafletMap);
+            
+            mapMarker = L.marker([centerLat, centerLon], {draggable: true}).addTo(leafletMap);
+            mapCircle = L.circle([centerLat, centerLon], {radius: radius}).addTo(leafletMap);
+            
+            // Обработка перетаскивания маркера
+            mapMarker.on('dragend', function(e) {
+                const pos = e.target.getLatLng();
+                document.getElementById('zoneLat').value = pos.lat.toFixed(6);
+                document.getElementById('zoneLon').value = pos.lng.toFixed(6);
+                mapCircle.setLatLng(pos);
+            });
+            
+            // Клик по карте для установки центра
+            leafletMap.on('click', function(e) {
+                document.getElementById('zoneLat').value = e.latlng.lat.toFixed(6);
+                document.getElementById('zoneLon').value = e.latlng.lng.toFixed(6);
+                mapMarker.setLatLng(e.latlng);
+                mapCircle.setLatLng(e.latlng);
+            });
+        }
         
         // Ползунок радиуса
         const slider = document.getElementById('radiusSlider');
         slider.addEventListener('input', function() {
-            mapRadius = parseInt(this.value);
-            document.getElementById('radiusValue').textContent = mapRadius + ' м';
-            document.getElementById('zoneRadius').value = mapRadius;
-            updateMapVisual();
+            const radius = parseInt(this.value);
+            document.getElementById('radiusValue').textContent = radius + ' м';
+            document.getElementById('zoneRadius').value = radius;
+            if (mapCircle) {
+                mapCircle.setRadius(radius);
+            }
         });
         
         // Синхронизация полей с картой
         ['zoneLat', 'zoneLon', 'zoneRadius'].forEach(id => {
             document.getElementById(id).addEventListener('input', function() {
-                if (id === 'zoneLat' || id === 'zoneLon') {
-                    const lat = parseFloat(document.getElementById('zoneLat').value) || mapCenter.lat;
-                    const lon = parseFloat(document.getElementById('zoneLon').value) || mapCenter.lon;
-                    mapCenter = { lat, lon };
-                } else if (id === 'zoneRadius') {
-                    mapRadius = parseFloat(document.getElementById('zoneRadius').value) || 500;
-                    document.getElementById('radiusSlider').value = mapRadius;
-                    document.getElementById('radiusValue').textContent = mapRadius + ' м';
+                const lat = parseFloat(document.getElementById('zoneLat').value) || 55.751244;
+                const lon = parseFloat(document.getElementById('zoneLon').value) || 37.618423;
+                const radius = parseFloat(document.getElementById('zoneRadius').value) || 500;
+                
+                if (leafletMap) {
+                    leafletMap.setView([lat, lon], 10);
+                    mapMarker.setLatLng([lat, lon]);
+                    mapCircle.setLatLng([lat, lon]);
+                    mapCircle.setRadius(radius);
                 }
-                updateMapVisual();
+                
+                document.getElementById('radiusSlider').value = radius;
+                document.getElementById('radiusValue').textContent = radius + ' м';
             });
         });
-    }
-
-    function coordsToPixel(lat, lon) {
-        const mapEl = document.getElementById('map');
-        const width = mapEl.clientWidth;
-        const height = mapEl.clientHeight;
-        
-        // Простая проекция для отображения
-        const minLat = 54.0;
-        const maxLat = 57.0;
-        const minLon = 36.0;
-        const maxLon = 39.0;
-        
-        const x = ((lon - minLon) / (maxLon - minLon)) * width;
-        const y = ((maxLat - lat) / (maxLat - minLat)) * height;
-        
-        return { x, y };
-    }
-
-    function pixelToCoords(x, y) {
-        const mapEl = document.getElementById('map');
-        const width = mapEl.clientWidth;
-        const height = mapEl.clientHeight;
-        
-        const minLat = 54.0;
-        const maxLat = 57.0;
-        const minLon = 36.0;
-        const maxLon = 39.0;
-        
-        const lon = (x / width) * (maxLon - minLon) + minLon;
-        const lat = maxLat - (y / height) * (maxLat - minLat);
-        
-        return { lat, lon };
-    }
-
-    function updateMapVisual() {
-        const mapEl = document.getElementById('map');
-        if (!mapEl) return;
-        
-        // Очистка старых элементов
-        const old = mapEl.querySelectorAll('.map-marker, .map-circle');
-        old.forEach(el => el.remove());
-        
-        const center = document.getElementById('zoneLat').value && document.getElementById('zoneLon').value ? 
-            { lat: parseFloat(document.getElementById('zoneLat').value), lon: parseFloat(document.getElementById('zoneLon').value) } : 
-            mapCenter;
-        
-        const radius = parseFloat(document.getElementById('zoneRadius').value) || mapRadius;
-        
-        const pos = coordsToPixel(center.lat, center.lon);
-        
-        // Маркер центра
-        const marker = document.createElement('div');
-        marker.className = 'map-marker';
-        marker.style.left = pos.x + 'px';
-        marker.style.top = pos.y + 'px';
-        mapEl.appendChild(marker);
-        
-        // Круг радиуса
-        const circle = document.createElement('div');
-        circle.className = 'map-circle';
-        const radiusPixels = Math.min(200, (radius / 5000) * Math.min(mapEl.clientWidth, mapEl.clientHeight));
-        circle.style.width = (radiusPixels * 2) + 'px';
-        circle.style.height = (radiusPixels * 2) + 'px';
-        circle.style.left = pos.x + 'px';
-        circle.style.top = pos.y + 'px';
-        mapEl.appendChild(circle);
-        
-        // Сетка координат
-        renderMapGrid();
-    }
-
-    function renderMapGrid() {
-        const mapEl = document.getElementById('map');
-        let grid = mapEl.querySelector('.map-grid');
-        if (!grid) {
-            grid = document.createElement('div');
-            grid.className = 'map-grid';
-            grid.style.cssText = 'position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none;';
-            mapEl.appendChild(grid);
-        }
-        
-        const lines = [];
-        for (let lat = 54.5; lat < 57; lat += 0.5) {
-            const pos = coordsToPixel(lat, 37.5);
-            lines.push(`<div style="position: absolute; left: 0; right: 0; top: ${pos.y}px; border-top: 1px dashed #ccc; font-size: 10px; color: #999;">${lat.toFixed(1)}°</div>`);
-        }
-        for (let lon = 36.5; lon < 39; lon += 0.5) {
-            const pos = coordsToPixel(55.5, lon);
-            lines.push(`<div style="position: absolute; top: 10px; bottom: 10px; left: ${pos.x}px; border-left: 1px dashed #ccc; font-size: 10px; color: #999; writing-mode: vertical-rl;">${lon.toFixed(1)}°</div>`);
-        }
-        grid.innerHTML = lines.join('');
     }
 
     function showTab(tabId) {
@@ -1129,6 +1067,10 @@
 
     // Init
     loadPositions();
+    
+    leafletScript.onload = function() {
+        console.log('Leaflet загружен');
+    };
+    document.head.appendChild(leafletScript);
 </script>
 </body>
-</html>

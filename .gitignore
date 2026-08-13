@@ -1,1 +1,12 @@
-Nothing should be ignored based on the provided file changes. The only added file is a Java source file (`src/main/java/com/worktrcker/app/config/WebConfig.java`), which should not be ignored. There are no build artifacts, dependencies, or temporary files in the changes that would warrant adding ignore rules.
+```
+# Java/Maven build artifacts
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven-specific
+.mvn/
+mvn/
+```

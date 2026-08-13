@@ -2,8 +2,10 @@ package com.worktrcker.app.controller;
 
 import com.worktrcker.app.model.Position;
 import com.worktrcker.app.repository.PositionRepository;
+import com.worktrcker.app.repository.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,6 +18,9 @@ public class PositionController {
 
     @Autowired
     private PositionRepository positionRepository;
+    
+    @Autowired
+    private EmployeeRepository employeeRepository;
 
     @GetMapping
     public ResponseEntity<List<Position>> getAllPositions() {
@@ -43,7 +48,17 @@ public class PositionController {
     }
 
     @DeleteMapping("/{id}")
+    @Transactional
     public ResponseEntity<Void> deletePosition(@PathVariable Long id) {
+        positionRepository.findById(id).ifPresent(position -> {
+            // Обнуляем связи у сотрудников перед удалением должности
+            if (position.getEmployees() != null) {
+                for (var employee : position.getEmployees()) {
+                    employee.setPosition(null);
+                    employeeRepository.save(employee);
+                }
+            }
+        });
         positionRepository.deleteById(id);
         return ResponseEntity.ok().build();
     }

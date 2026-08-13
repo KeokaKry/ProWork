@@ -32,27 +32,11 @@
         .status-completed { background: #cce5ff; color: #004085; }
         .status-pending { background: #fff3cd; color: #856404; }
         
-        /* Стили для экрана входа */
-        #loginScreen { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f0f2f5; }
-        .login-card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 350px; }
-        .login-card h2 { text-align: center; color: #333; }
-        .login-card input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        .login-card button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
-        .login-card button:hover { background: #0056b3; }
-        .login-error { color: red; font-size: 14px; text-align: center; margin-top: 10px; display: none; }
-        #adminContent { display: none; }
+        /* Стили для админ-панели */
+        #adminContent { display: block; }
     </style>
 </head>
 <body>
-
-<div id="loginScreen">
-    <div class="login-card">
-        <h2>Вход в админ-панель</h2>
-        <input type="password" id="adminPassword" placeholder="Введите пароль">
-        <div id="loginError" class="login-error"></div>
-        <button onclick="checkAdminPassword()">Войти</button>
-    </div>
-</div>
 
 <div id="adminContent">
 <header>
@@ -66,7 +50,6 @@
         <button onclick="showTab('taskReports')" id="btn-taskReports">Отчет по заданиям</button>
     </nav>
 </header>
-
 <div class="container">
     <!-- Вкладка Должности -->
     <div id="positions" class="tab-content">
@@ -1085,36 +1068,9 @@
     // Init
     loadPositions();
     
-    // Проверка пароля администратора
-    const ADMIN_PASSWORD = 'admin123';
-    
-    function checkAdminPassword() {
-        const password = document.getElementById('adminPassword').value;
-        const errorDiv = document.getElementById('loginError');
-        
-        if (password === ADMIN_PASSWORD) {
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('adminContent').style.display = 'block';
-        } else {
-            errorDiv.textContent = 'Неверный пароль';
-            errorDiv.style.display = 'block';
-        }
-    }
-    
-    // Позволить вход по нажатию Enter
-    document.getElementById('adminPassword').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            checkAdminPassword();
-        }
-    });
-    
-    // Подключение Leaflet JS
-    const leafletScript = document.createElement('script');
-    leafletScript.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
     leafletScript.onload = function() {
         console.log('Leaflet загружен');
     };
     document.head.appendChild(leafletScript);
 </script>
 </body>
-</html>

@@ -6,6 +6,7 @@ import com.worktrcker.app.repository.GeoZoneRepository;
 import com.worktrcker.app.repository.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -53,7 +54,19 @@ public class GeoZoneController {
     }
 
     @DeleteMapping("/{id}")
+    @Transactional
     public ResponseEntity<Void> deleteGeoZone(@PathVariable Long id) {
+        geoZoneRepository.findById(id).ifPresent(geoZone -> {
+            // Обнуляем связи у сотрудников перед удалением геозоны
+            if (geoZone.getEmployees() != null) {
+                for (var employee : geoZone.getEmployees()) {
+                    if (employee.getGeoZones() != null) {
+                        employee.getGeoZones().remove(geoZone);
+                    }
+                    employeeRepository.save(employee);
+                }
+            }
+        });
         geoZoneRepository.deleteById(id);
         return ResponseEntity.ok().build();
     }
