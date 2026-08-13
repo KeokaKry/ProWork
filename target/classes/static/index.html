@@ -124,13 +124,15 @@
         }
         
         // Получение геолокации сразу
+        let geoDenied = false;
         if (navigator.geolocation) {
             navigator.geolocation.watchPosition(pos => {
                 userLat = pos.coords.latitude;
                 userLon = pos.coords.longitude;
                 document.getElementById('geoStatus').textContent = `Geo: ${userLat.toFixed(6)}, ${userLon.toFixed(6)}`;
             }, err => {
-                document.getElementById('geoStatus').textContent = "Ошибка GPS: " + err.message;
+                geoDenied = true;
+                document.getElementById('geoStatus').textContent = "Ошибка GPS: " + err.message + ". Смена доступна без геопозиции.";
             }, { enableHighAccuracy: true, timeout: 10000 });
         }
     };
@@ -278,9 +280,9 @@
     }
 
     async function toggleWork() {
-        if (!userLat || !userLon) {
-            alert("Нет данных геолокации. Разрешите доступ к GPS.");
-            return;
+        if (!isWorking && !userLat && !userLon) {
+            // Геолокация недоступна, но смену можно начать
+            console.log("Смена начинается без геопозиции");
         }
 
         if (isWorking) {
