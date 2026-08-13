@@ -332,7 +332,12 @@
         if(tabId === 'geozones') { 
             loadGeoZones(); 
             loadEmployeesForGeoAssign();
-            setTimeout(initMap, 100);
+            setTimeout(() => {
+                initMap();
+                if (leafletMap) {
+                    leafletMap.invalidateSize();
+                }
+            }, 200);
         }
         if(tabId === 'tasks') { loadEmployeesForTask(); loadTasks(); }
         if(tabId === 'reports') { 
@@ -1068,9 +1073,14 @@
     // Init
     loadPositions();
     
+    // Динамическая загрузка Leaflet JS
+    var leafletScript = document.createElement('script');
+    leafletScript.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
     leafletScript.onload = function() {
         console.log('Leaflet загружен');
+        initMap();
     };
     document.head.appendChild(leafletScript);
 </script>
 </body>
+</html>
