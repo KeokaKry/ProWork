@@ -3,6 +3,7 @@ package com.worktrcker.app.controller;
 import com.worktrcker.app.model.Employee;
 import com.worktrcker.app.repository.EmployeeRepository;
 import com.worktrcker.app.repository.PositionRepository;
+import com.worktrcker.app.repository.WorkRecordRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,9 @@ public class EmployeeController {
     
     @Autowired
     private PositionRepository positionRepository;
+    
+    @Autowired
+    private WorkRecordRepository workRecordRepository;
 
     // Получить список всех сотрудников с геозонами
     @GetMapping("/list")
@@ -74,6 +78,16 @@ public class EmployeeController {
     @Transactional
     public ResponseEntity<Void> deleteEmployee(@PathVariable Long id) {
         employeeRepository.findById(id).ifPresent(employee -> {
+            // Проверяем и удаляем связанные рабочие записи
+            if (employee.getWorkRecords() != null && !employee.getWorkRecords().isEmpty()) {
+                var workRecordsCopy = List.copyOf(employee.getWorkRecords());
+                for (var workRecord : workRecordsCopy) {
+                    workRecord.setEmployee(null);
+                    workRecordRepository.save(workRecord);
+                }
+                employee.getWorkRecords().clear();
+            }
+            
             // Обнуляем связи перед удалением
             employee.setPosition(null);
             
