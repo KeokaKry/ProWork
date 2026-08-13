@@ -332,7 +332,12 @@
         if(tabId === 'geozones') { 
             loadGeoZones(); 
             loadEmployeesForGeoAssign();
-            setTimeout(initMap, 100);
+            setTimeout(() => {
+                initMap();
+                if (leafletMap) {
+                    leafletMap.invalidateSize();
+                }
+            }, 200);
         }
         if(tabId === 'tasks') { loadEmployeesForTask(); loadTasks(); }
         if(tabId === 'reports') { 
