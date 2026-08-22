@@ -1239,9 +1239,9 @@
             }
         }
         
-        let url = '/api/reports/advances/period?startDate=' + startDate + '&endDate=' + endDate;
+        let url = '/api/advances/period?startDate=' + startDate + '&endDate=' + endDate;
         if (employeeId) {
-            url = '/api/reports/advances/employee/' + employeeId + '/period?startDate=' + startDate + '&endDate=' + endDate;
+            url = '/api/advances/employee/' + employeeId + '/period?startDate=' + startDate + '&endDate=' + endDate;
         }
         
         const res = await fetch(url);
@@ -1274,8 +1274,9 @@
         tbody.innerHTML = '';
         
         for (const emp of employees) {
-            const totalRes = await fetch(`/api/reports/advances/employee/${emp.id}/total?startDate=${startDate}&endDate=${endDate}`);
-            const total = await totalRes.json();
+            const totalRes = await fetch(`/api/advances/employee/${emp.id}/total?startDate=${startDate}&endDate=${endDate}`);
+            const data = await totalRes.json();
+            const total = data.totalAmount || 0;
             
             if (total > 0) {
                 tbody.innerHTML += `
@@ -1299,15 +1300,19 @@
             return;
         }
         
-        const formData = new FormData();
-        formData.append('employeeId', employeeId);
-        formData.append('amount', amount);
-        if (date) formData.append('date', date);
-        if (comment) formData.append('comment', comment);
+        const body = {
+            employeeId: employeeId,
+            amount: amount,
+            date: date || null,
+            comment: comment || null
+        };
         
-        const res = await fetch('/api/reports/advance', {
+        const res = await fetch('/api/advances', {
             method: 'POST',
-            body: formData
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
         });
         
         if (res.ok) {
@@ -1324,7 +1329,7 @@
     async function deleteAdvance(id) {
         if (!confirm('Вы уверены, что хотите удалить этот аванс?')) return;
         
-        const res = await fetch(`/api/reports/advance/${id}`, { method: 'DELETE' });
+        const res = await fetch(`/api/advances/${id}`, { method: 'DELETE' });
         if (res.ok) {
             alert('Аванс удален');
             loadAdvancesWithFilter();
