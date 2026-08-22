@@ -950,16 +950,16 @@
         });
         
         // Отображаем данные по каждому сотруднику с учетом авансов
-        for (const emp of Object.values(employeeData)) {
+        for (const [id, emp] of Object.entries(employeeData)) {
             const salary = emp.totalHours * emp.hourlyRate;
             const startDateStr = emp.minDate ? emp.minDate.toLocaleDateString() : '-';
             const endDateStr = emp.maxDate ? emp.maxDate.toLocaleDateString() : '-';
             
             // Получаем сумму авансов за период
             let totalAdvances = 0;
-            if (empId !== 'unknown' && startDate && endDate) {
+            if (id !== 'unknown' && startDate && endDate) {
                 try {
-                    const advancesRes = await fetch(`/api/reports/advances/employee/${empId}/total?startDate=${startDate}&endDate=${endDate}`);
+                    const advancesRes = await fetch(`/api/reports/advances/employee/${id}/total?startDate=${startDate}&endDate=${endDate}`);
                     if (advancesRes.ok) {
                         totalAdvances = await advancesRes.json();
                     }

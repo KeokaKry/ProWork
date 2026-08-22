@@ -1,3 +1,4 @@
+nohup: ignoring input
 
   .   ____          _            __ _ _
  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
@@ -7,30 +8,30 @@
  =========|_|==============|___/=/_/_/_/
  :: Spring Boot ::                (v3.2.5)
 
-2026-08-13T06:29:28.226Z  INFO 1835 --- [           main] com.worktrcker.app.AppApplication        : Starting AppApplication v0.0.1-SNAPSHOT using Java 17.0.16 with PID 1835 (/workspace/target/app-0.0.1-SNAPSHOT.jar started by root in /workspace)
-2026-08-13T06:29:28.229Z  INFO 1835 --- [           main] com.worktrcker.app.AppApplication        : No active profile set, falling back to 1 default profile: "default"
-2026-08-13T06:29:33.847Z  INFO 1835 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
-2026-08-13T06:29:34.410Z  INFO 1835 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 538 ms. Found 4 JPA repository interfaces.
-2026-08-13T06:29:38.208Z  INFO 1835 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
-2026-08-13T06:29:38.308Z  INFO 1835 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
-2026-08-13T06:29:38.308Z  INFO 1835 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
-2026-08-13T06:29:38.506Z  INFO 1835 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
-2026-08-13T06:29:38.508Z  INFO 1835 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 9699 ms
-2026-08-13T06:29:39.408Z  INFO 1835 --- [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
-2026-08-13T06:29:39.668Z  INFO 1835 --- [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.4.Final
-2026-08-13T06:29:39.849Z  INFO 1835 --- [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
-2026-08-13T06:29:41.110Z  INFO 1835 --- [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
-2026-08-13T06:29:41.287Z  INFO 1835 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
-2026-08-13T06:29:44.685Z  INFO 1835 --- [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@54567b05
-2026-08-13T06:29:44.688Z  INFO 1835 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
-2026-08-13T06:29:44.972Z  WARN 1835 --- [           main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-2026-08-13T06:29:50.593Z  INFO 1835 --- [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
-2026-08-13T06:29:54.463Z  INFO 1835 --- [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
-2026-08-13T06:29:56.249Z  INFO 1835 --- [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
-2026-08-13T06:29:59.869Z  WARN 1835 --- [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-2026-08-13T06:29:59.990Z  INFO 1835 --- [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
-2026-08-13T06:30:02.327Z  INFO 1835 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path ''
-2026-08-13T06:30:02.426Z  INFO 1835 --- [           main] com.worktrcker.app.AppApplication        : Started AppApplication in 37.762 seconds (process running for 40.7)
-2026-08-13T06:30:09.406Z  INFO 1835 --- [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
-2026-08-13T06:30:09.406Z  INFO 1835 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
-2026-08-13T06:30:09.408Z  INFO 1835 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+2026-08-22T22:15:21.907Z  INFO 2810 --- [           main] com.worktrcker.app.AppApplication        : Starting AppApplication v0.0.1-SNAPSHOT using Java 17.0.16 with PID 2810 (/workspace/target/app-0.0.1-SNAPSHOT.jar started by root in /workspace)
+2026-08-22T22:15:21.919Z  INFO 2810 --- [           main] com.worktrcker.app.AppApplication        : No active profile set, falling back to 1 default profile: "default"
+2026-08-22T22:15:24.790Z  INFO 2810 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-08-22T22:15:25.011Z  INFO 2810 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 211 ms. Found 5 JPA repository interfaces.
+2026-08-22T22:15:26.605Z  INFO 2810 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-08-22T22:15:26.619Z  INFO 2810 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-08-22T22:15:26.620Z  INFO 2810 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
+2026-08-22T22:15:26.712Z  INFO 2810 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-08-22T22:15:26.714Z  INFO 2810 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 4383 ms
+2026-08-22T22:15:27.107Z  INFO 2810 --- [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-08-22T22:15:27.216Z  INFO 2810 --- [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.4.Final
+2026-08-22T22:15:27.311Z  INFO 2810 --- [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-08-22T22:15:27.817Z  INFO 2810 --- [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-08-22T22:15:27.898Z  INFO 2810 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-08-22T22:15:31.156Z  INFO 2810 --- [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@38f617f4
+2026-08-22T22:15:31.158Z  INFO 2810 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-08-22T22:15:31.476Z  WARN 2810 --- [           main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-08-22T22:15:34.513Z  INFO 2810 --- [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-08-22T22:15:40.502Z  INFO 2810 --- [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-08-22T22:15:41.407Z  INFO 2810 --- [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-08-22T22:15:42.797Z  WARN 2810 --- [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-08-22T22:15:42.826Z  INFO 2810 --- [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-08-22T22:15:43.931Z  INFO 2810 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path ''
+2026-08-22T22:15:43.998Z  INFO 2810 --- [           main] com.worktrcker.app.AppApplication        : Started AppApplication in 23.496 seconds (process running for 24.735)
+2026-08-22T22:15:49.904Z  INFO 2810 --- [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-08-22T22:15:49.904Z  INFO 2810 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-08-22T22:15:49.906Z  INFO 2810 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
