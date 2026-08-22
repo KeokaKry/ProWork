@@ -48,6 +48,7 @@
         <button onclick="showTab('tasks')" id="btn-tasks">Задания</button>
         <button onclick="showTab('reports')" id="btn-reports">Отчет по периодам</button>
         <button onclick="showTab('taskReports')" id="btn-taskReports">Отчет по заданиям</button>
+        <button onclick="showTab('advances')" id="btn-advances">Авансы</button>
     </nav>
 </header>
 <div class="container">
@@ -189,6 +190,8 @@
                     <th>Отработано часов</th>
                     <th>Ставка в час</th>
                     <th>Общая заработная плата</th>
+                    <th>Выдано авансов</th>
+                    <th>К выдаче на руки</th>
                 </tr>
             </thead>
             <tbody id="reportTable"></tbody>
@@ -236,6 +239,78 @@
                 </tr>
             </thead>
             <tbody id="taskReportTable"></tbody>
+        </table>
+    </div>
+
+    <!-- Вкладка Авансы -->
+    <div id="advances" class="tab-content">
+        <h2>Управление авансами</h2>
+        
+        <div style="margin-bottom: 15px; padding: 10px; background: #e3f2fd; border-radius: 4px;">
+            <h3>Выдать аванс сотруднику</h3>
+            <select id="advanceEmployeeSelect" style="width: 250px;">
+                <option value="">Выберите сотрудника</option>
+            </select>
+            <br>
+            <label>Сумма аванса (руб):</label>
+            <input type="number" id="advanceAmount" placeholder="0.00" step="0.01" style="width: 150px;">
+            <br>
+            <label>Дата:</label>
+            <input type="date" id="advanceDate" style="width: 150px;">
+            <br>
+            <label>Комментарий:</label>
+            <textarea id="advanceComment" placeholder="Необязательно" rows="2" style="width: 300px;"></textarea>
+            <br>
+            <button class="primary" onclick="saveAdvance()" style="margin-top: 10px;">Сохранить аванс</button>
+        </div>
+
+        <div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+            <h3>Фильтр авансов</h3>
+            <label>Сотрудник:</label>
+            <select id="advanceFilterEmployee" style="width: 250px;">
+                <option value="">Все сотрудники</option>
+            </select>
+            <br>
+            <label>Период:</label>
+            <select id="advancePeriodType" style="width: 150px;" onchange="toggleAdvanceCustomPeriod()">
+                <option value="week">Неделя</option>
+                <option value="month">Месяц</option>
+                <option value="custom">Свой период</option>
+            </select>
+            <br>
+            <div id="advanceCustomPeriodInputs" style="display:none; margin-top: 10px;">
+                <label>Начало периода:</label>
+                <input type="date" id="advanceStartDate" style="width: 150px;">
+                <label>Конец периода:</label>
+                <input type="date" id="advanceEndDate" style="width: 150px;">
+            </div>
+            <br>
+            <button class="primary" onclick="loadAdvancesWithFilter()" style="margin-top: 10px;">Применить фильтр</button>
+        </div>
+
+        <h3>История авансов</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Сотрудник</th>
+                    <th>Дата</th>
+                    <th>Сумма (руб)</th>
+                    <th>Комментарий</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody id="advancesTable"></tbody>
+        </table>
+
+        <h3 style="margin-top: 20px;">Сводка по авансам за период</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Сотрудник</th>
+                    <th>Всего выдано авансов (руб)</th>
+                </tr>
+            </thead>
+            <tbody id="advancesSummaryTable"></tbody>
         </table>
     </div>
 </div>
@@ -347,6 +422,10 @@
         if(tabId === 'taskReports') {
             loadEmployeesForTaskReportFilter();
             loadTaskReportsWithFilter();
+        }
+        if(tabId === 'advances') {
+            loadEmployeesForAdvance();
+            loadAdvancesWithFilter();
         }
     }
 
@@ -808,12 +887,33 @@
         document.getElementById('reportEndDate').value = now.toISOString().split('T')[0];
     }
     
-    function displayPeriodReport(data) {
+    async function displayPeriodReport(data) {
+        const employeeId = document.getElementById('reportEmployeeSelect').value;
+        const periodType = document.getElementById('reportPeriodType').value;
+        let startDate, endDate;
+        
+        if (periodType === 'custom') {
+            startDate = document.getElementById('reportStartDate').value;
+            endDate = document.getElementById('reportEndDate').value;
+        } else {
+            const now = new Date();
+            if (periodType === 'week') {
+                const dayOfWeek = now.getDay() || 7;
+                const start = new Date(now);
+                start.setDate(now.getDate() - dayOfWeek + 1);
+                startDate = start.toISOString().split('T')[0];
+            } else if (periodType === 'month') {
+                const start = new Date(now.getFullYear(), now.getMonth(), 1);
+                startDate = start.toISOString().split('T')[0];
+            }
+            endDate = now.toISOString().split('T')[0];
+        }
+        
         const tbody = document.getElementById('reportTable');
         tbody.innerHTML = '';
         
         if (!data || data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Отчетов не найдено</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Отчетов не найдено</td></tr>';
             return;
         }
         
@@ -849,11 +949,26 @@
             }
         });
         
-        // Отображаем данные по каждому сотруднику
-        Object.values(employeeData).forEach(emp => {
+        // Отображаем данные по каждому сотруднику с учетом авансов
+        for (const emp of Object.values(employeeData)) {
             const salary = emp.totalHours * emp.hourlyRate;
             const startDateStr = emp.minDate ? emp.minDate.toLocaleDateString() : '-';
             const endDateStr = emp.maxDate ? emp.maxDate.toLocaleDateString() : '-';
+            
+            // Получаем сумму авансов за период
+            let totalAdvances = 0;
+            if (empId !== 'unknown' && startDate && endDate) {
+                try {
+                    const advancesRes = await fetch(`/api/reports/advances/employee/${empId}/total?startDate=${startDate}&endDate=${endDate}`);
+                    if (advancesRes.ok) {
+                        totalAdvances = await advancesRes.json();
+                    }
+                } catch (e) {
+                    console.error('Ошибка загрузки авансов:', e);
+                }
+            }
+            
+            const toPay = salary - totalAdvances;
             
             tbody.innerHTML += `<tr>
                 <td>${emp.fullName}</td>
@@ -863,8 +978,10 @@
                 <td>${emp.totalHours.toFixed(2)}</td>
                 <td>${emp.hourlyRate}</td>
                 <td>${Math.round(salary)}</td>
+                <td>${Math.round(totalAdvances)}</td>
+                <td>${Math.round(toPay)}</td>
             </tr>`;
-        });
+        }
     }
     
     function exportReportToExcel() {
@@ -1068,6 +1185,171 @@
         data.forEach(e => {
             select.innerHTML += `<option value="${e.id}">${e.fullName}</option>`;
         });
+    }
+
+    // === Авансы ===
+    
+    function toggleAdvanceCustomPeriod() {
+        const periodType = document.getElementById('advancePeriodType').value;
+        const customInputs = document.getElementById('advanceCustomPeriodInputs');
+        if (periodType === 'custom') {
+            customInputs.style.display = 'block';
+        } else {
+            customInputs.style.display = 'none';
+            setAdvancePeriod(periodType);
+        }
+    }
+    
+    function setAdvancePeriod(periodType) {
+        const now = new Date();
+        const startDateInput = document.getElementById('advanceStartDate');
+        const endDateInput = document.getElementById('advanceEndDate');
+        
+        if (periodType === 'week') {
+            const dayOfWeek = now.getDay() || 7;
+            const start = new Date(now);
+            start.setDate(now.getDate() - dayOfWeek + 1);
+            startDateInput.value = start.toISOString().split('T')[0];
+            endDateInput.value = now.toISOString().split('T')[0];
+        } else if (periodType === 'month') {
+            startDateInput.value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+            endDateInput.value = now.toISOString().split('T')[0];
+        }
+    }
+    
+    async function loadAdvancesWithFilter() {
+        const employeeId = document.getElementById('advanceFilterEmployee').value;
+        const periodType = document.getElementById('advancePeriodType').value;
+        let startDate, endDate;
+        
+        if (periodType === 'custom') {
+            startDate = document.getElementById('advanceStartDate').value;
+            endDate = document.getElementById('advanceEndDate').value;
+        } else {
+            const now = new Date();
+            if (periodType === 'week') {
+                const dayOfWeek = now.getDay() || 7;
+                const start = new Date(now);
+                start.setDate(now.getDate() - dayOfWeek + 1);
+                startDate = start.toISOString().split('T')[0];
+                endDate = now.toISOString().split('T')[0];
+            } else if (periodType === 'month') {
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+                endDate = now.toISOString().split('T')[0];
+            }
+        }
+        
+        let url = '/api/reports/advances/period?startDate=' + startDate + '&endDate=' + endDate;
+        if (employeeId) {
+            url = '/api/reports/advances/employee/' + employeeId + '/period?startDate=' + startDate + '&endDate=' + endDate;
+        }
+        
+        const res = await fetch(url);
+        const advances = await res.json();
+        
+        const tbody = document.getElementById('advancesTable');
+        tbody.innerHTML = '';
+        
+        advances.forEach(a => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${a.employee.fullName}</td>
+                    <td>${a.date}</td>
+                    <td>${a.amount.toFixed(2)}</td>
+                    <td>${a.comment || '-'}</td>
+                    <td><button class="danger" onclick="deleteAdvance(${a.id})">Удалить</button></td>
+                </tr>
+            `;
+        });
+        
+        // Загружаем сводку
+        loadAdvancesSummary(startDate, endDate);
+    }
+    
+    async function loadAdvancesSummary(startDate, endDate) {
+        const res = await fetch('/api/employees/list');
+        const employees = await res.json();
+        
+        const tbody = document.getElementById('advancesSummaryTable');
+        tbody.innerHTML = '';
+        
+        for (const emp of employees) {
+            const totalRes = await fetch(`/api/reports/advances/employee/${emp.id}/total?startDate=${startDate}&endDate=${endDate}`);
+            const total = await totalRes.json();
+            
+            if (total > 0) {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${emp.fullName}</td>
+                        <td>${total.toFixed(2)}</td>
+                    </tr>
+                `;
+            }
+        }
+    }
+    
+    async function saveAdvance() {
+        const employeeId = document.getElementById('advanceEmployeeSelect').value;
+        const amount = document.getElementById('advanceAmount').value;
+        const date = document.getElementById('advanceDate').value;
+        const comment = document.getElementById('advanceComment').value;
+        
+        if (!employeeId || !amount) {
+            alert('Выберите сотрудника и введите сумму аванса');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('employeeId', employeeId);
+        formData.append('amount', amount);
+        if (date) formData.append('date', date);
+        if (comment) formData.append('comment', comment);
+        
+        const res = await fetch('/api/reports/advance', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (res.ok) {
+            alert('Аванс успешно сохранен');
+            document.getElementById('advanceAmount').value = '';
+            document.getElementById('advanceComment').value = '';
+            loadAdvancesWithFilter();
+        } else {
+            const error = await res.text();
+            alert('Ошибка: ' + error);
+        }
+    }
+    
+    async function deleteAdvance(id) {
+        if (!confirm('Вы уверены, что хотите удалить этот аванс?')) return;
+        
+        const res = await fetch(`/api/reports/advance/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            alert('Аванс удален');
+            loadAdvancesWithFilter();
+        } else {
+            alert('Ошибка удаления аванса');
+        }
+    }
+    
+    async function loadEmployeesForAdvance() {
+        const res = await fetch('/api/employees/list');
+        const data = await res.json();
+        
+        const select1 = document.getElementById('advanceEmployeeSelect');
+        const select2 = document.getElementById('advanceFilterEmployee');
+        
+        select1.innerHTML = '<option value="">Выберите сотрудника</option>';
+        select2.innerHTML = '<option value="">Все сотрудники</option>';
+        
+        data.forEach(e => {
+            select1.innerHTML += `<option value="${e.id}">${e.fullName}</option>`;
+            select2.innerHTML += `<option value="${e.id}">${e.fullName}</option>`;
+        });
+        
+        // Устанавливаем сегодняшнюю дату по умолчанию
+        document.getElementById('advanceDate').value = new Date().toISOString().split('T')[0];
     }
 
     // Init

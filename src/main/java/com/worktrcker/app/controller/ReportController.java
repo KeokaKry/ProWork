@@ -270,7 +270,8 @@ public class ReportController {
         }
 
         // Формируем ответ с расчетом авансов и итоговой суммы
-        return ResponseEntity.ok(records.stream().map(record -> {
+        List<Map<String, Object>> result = new java.util.ArrayList<>();
+        for (WorkRecord record : records) {
             Long empId = record.getEmployee().getId();
             LocalDate recStartDate = record.getStartTime().toLocalDate();
             LocalDate recEndDate = record.getEndTime() != null ? record.getEndTime().toLocalDate() : recStartDate;
@@ -281,30 +282,37 @@ public class ReportController {
             
             // Расчет заработанного (часы * ставка)
             BigDecimal earned = BigDecimal.ZERO;
+            BigDecimal hourlyRate = BigDecimal.ZERO;
+            double hoursWorked = 0;
             if (record.getStartTime() != null && record.getEndTime() != null) {
-                long hoursWorked = java.time.Duration.between(record.getStartTime(), record.getEndTime()).toHours();
-                BigDecimal hourlyRate = record.getEmployee().getHourlyRate() != null ? 
-                    record.getEmployee().getHourlyRate() : BigDecimal.ZERO;
+                hoursWorked = java.time.Duration.between(record.getStartTime(), record.getEndTime()).toHours();
+                // Ставку берем из позиции сотрудника
+                if (record.getEmployee().getPosition() != null && 
+                    record.getEmployee().getPosition().getHourlyRate() != null) {
+                    hourlyRate = BigDecimal.valueOf(record.getEmployee().getPosition().getHourlyRate());
+                }
                 earned = hourlyRate.multiply(BigDecimal.valueOf(hoursWorked));
             }
             
             // Итоговая сумма к выдаче
             BigDecimal toPay = earned.subtract(totalAdvances);
             
-            return Map.<String, Object>of(
-                "id", record.getId(),
-                "employeeId", empId,
-                "employeeName", record.getEmployee().getFullName(),
-                "startTime", record.getStartTime(),
-                "endTime", record.getEndTime(),
-                "hoursWorked", record.getHoursWorked(),
-                "hourlyRate", record.getHourlyRate(),
-                "earned", earned,
-                "totalAdvances", totalAdvances,
-                "toPay", toPay,
-                "status", record.getStatus(),
-                "reportPhotoUrl", record.getReportPhotoUrl()
-            );
-        }).toList());
+            Map<String, Object> recordMap = new java.util.HashMap<>();
+            recordMap.put("id", record.getId());
+            recordMap.put("employeeId", empId);
+            recordMap.put("employeeName", record.getEmployee().getFullName());
+            recordMap.put("startTime", record.getStartTime());
+            recordMap.put("endTime", record.getEndTime());
+            recordMap.put("hoursWorked", hoursWorked);
+            recordMap.put("hourlyRate", hourlyRate);
+            recordMap.put("earned", earned);
+            recordMap.put("totalAdvances", totalAdvances);
+            recordMap.put("toPay", toPay);
+            recordMap.put("status", record.getStatus());
+            recordMap.put("reportPhotoUrl", record.getReportPhotoUrl());
+            
+            result.add(recordMap);
+        }
+        return ResponseEntity.ok(result);
     }
 }
