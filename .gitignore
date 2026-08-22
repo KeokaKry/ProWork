@@ -1,51 +1,24 @@
 ```
 # Compiled and build artifacts
-*.pyc
-__pycache__/
 *.class
 *.o
 *.obj
-*.exe
-*.dll
-*.so
-*.a
 *.out
-dist/
-build/
 target/
 
 # Dependencies
-node_modules/
-venv/
-.venv/
-.env
-.env.local
-.env.*
+.m2/
+.gradle/
 
 # Logs and temp files
 *.log
 *.tmp
 *.swp
-*.swo
 
 # Editors
 .vscode/
 .idea/
-*.swp
 
-# System files
-.DS_Store
-Thumbs.db
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
-
-# Python specific
-.mypy_cache/
-.pytest_cache/
-
-# Java specific
-.gradle/
+# Maven specific
+target/maven-status/
 ```

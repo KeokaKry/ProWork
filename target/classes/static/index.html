@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#007bff">
     <title>Вход сотрудника</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icon-192.png">
     <style>
         body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f0f2f5; margin: 0; }
         .card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 350px; }
@@ -55,7 +58,7 @@
     
     <div class="nav-tabs">
         <button class="nav-tab active" onclick="showWorkTab('main')">Смена</button>
-        <button class="nav-tab" onclick="showWorkTab('task')">Задание</button>
+        <button class="nav-tab" id="taskTabBtn" onclick="showWorkTab('task')" style="display:none;">Задание</button>
         <button class="nav-tab" onclick="showWorkTab('report')">Отчет</button>
         <button class="nav-tab" onclick="showWorkTab('history')">История</button>
     </div>
@@ -81,8 +84,7 @@
         <p style="font-size:12px; color:#666;">Сделайте фотографию выполненной работы</p>
         <input type="file" id="reportPhoto" accept="image/*" capture="camera">
         <img id="photoPreview" class="photo-preview" style="display:none;">
-        <button class="success" onclick="uploadReport()" id="uploadBtn" style="display:none;">Отправить отчет</button>
-        <button class="success" onclick="completeWorkReport()" id="completeReportBtn" style="display:none; margin-top:10px;">Готово (завершить отчет)</button>
+        <button class="success" onclick="uploadReport()" id="uploadBtn" style="display:none;">Загрузить фотоотчет</button>
     </div>
     
     <!-- Вкладка История -->
@@ -105,9 +107,21 @@
     let breakNotificationShown = false;
     let lunchNotificationShown = false;
     let notificationInterval = null;
+    let reportUploaded = false; // Флаг загруженного фотоотчета
 
-    // Загрузка списка сотрудников при старте
+    // Загрузка списка сотрудников при старте + регистрация Service Worker для PWA
     window.onload = async () => {
+        // Регистрация Service Worker для PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                    console.log('Service Worker зарегистрирован:', registration.scope);
+                })
+                .catch(error => {
+                    console.log('Ошибка регистрации Service Worker:', error);
+                });
+        }
+        
         try {
             const res = await fetch('/api/employees/list');
             const employees = await res.json();
@@ -194,6 +208,16 @@
         if (data && data.id) {
             isWorking = true;
             currentWorkId = data.id;
+            // Проверяем, есть ли уже загруженный фотоотчет для этой смены
+            reportUploaded = data.reportPhotoUrl ? true : false;
+            
+            // Если фото уже загружено, показываем превью
+            if (reportUploaded && data.reportPhotoUrl) {
+                const img = document.getElementById('photoPreview');
+                img.src = data.reportPhotoUrl;
+                img.style.display = 'block';
+            }
+            
             updateUI(true);
             startNotificationChecker();
             startTimer(data.startTime);
@@ -229,6 +253,9 @@
                     if (data.type === 'LUNCH_START') lunchNotificationShown = false;
                     if (data.type === 'SHORT_BREAK_START') breakNotificationShown = false;
                 }
+                
+                // Проверяем наличие нового задания (для уведомления о назначении)
+                await loadDailyTask();
             } catch (e) {
                 console.error("Ошибка проверки уведомлений", e);
             }
@@ -286,6 +313,12 @@
         }
 
         if (isWorking) {
+            // Завершить - проверяем наличие фотоотчета через флаг reportUploaded
+            if (!reportUploaded) {
+                alert("Нельзя завершить смену без фотоотчета! Пожалуйста, загрузите фото на вкладке 'Отчет'.");
+                return;
+            }
+            
             // Завершить
             const res = await fetch(`/api/work/finish/${currentWorkId}`, {
                 method: 'POST',
@@ -295,6 +328,7 @@
             if(res.ok) {
                 isWorking = false;
                 currentWorkId = null;
+                reportUploaded = false; // Сбрасываем флаг
                 updateUI(false);
                 clearInterval(notificationInterval);
                 document.getElementById('workTimer').textContent = '';
@@ -311,6 +345,7 @@
                 const data = await res.json();
                 isWorking = true;
                 currentWorkId = data.id;
+                reportUploaded = false; // Сбрасываем флаг при начале новой смены
                 updateUI(true);
                 startNotificationChecker();
                 startTimer(new Date().toISOString());
@@ -328,7 +363,29 @@
                 const lastTask = tasks[tasks.length - 1];
                 if (lastTask.dailyTask) {
                     document.getElementById('dailyTask').textContent = lastTask.dailyTask;
-                    return true;
+                    // Показываем вкладку "Задание" если есть активное задание со статусом PENDING
+                    const taskTabBtn = document.getElementById('taskTabBtn');
+                    if (taskTabBtn && lastTask.status === 'PENDING') {
+                        taskTabBtn.style.display = 'block';
+                        // Показываем уведомление о новом задании
+                        showNotification("Внимание! Вам назначено задание. Перейдите на вкладку 'Задание'.");
+                        return true;
+                    } else if (taskTabBtn) {
+                        // Скрываем если задание выполнено или отсутствует
+                        taskTabBtn.style.display = 'none';
+                    }
+                } else {
+                    // Нет задания - скрываем вкладку
+                    const taskTabBtn = document.getElementById('taskTabBtn');
+                    if (taskTabBtn) {
+                        taskTabBtn.style.display = 'none';
+                    }
+                }
+            } else {
+                // Нет заданий вообще - скрываем вкладку
+                const taskTabBtn = document.getElementById('taskTabBtn');
+                if (taskTabBtn) {
+                    taskTabBtn.style.display = 'none';
                 }
             }
             return false;
@@ -355,6 +412,11 @@
                 if (res.ok) {
                     alert("Задание выполнено!");
                     document.getElementById('completeTaskBtn').style.display = 'none';
+                    // Скрываем вкладку "Задание" после выполнения
+                    const taskTabBtn = document.getElementById('taskTabBtn');
+                    if (taskTabBtn) {
+                        taskTabBtn.style.display = 'none';
+                    }
                     loadDailyTask();
                 } else {
                     alert("Ошибка обновления статуса");
@@ -374,7 +436,10 @@
                 const img = document.getElementById('photoPreview');
                 img.src = e.target.result;
                 img.style.display = 'block';
-                document.getElementById('uploadBtn').style.display = 'block';
+                // Сразу показываем кнопку загрузки, если смена активна
+                if (currentWorkId) {
+                    document.getElementById('uploadBtn').style.display = 'block';
+                }
             };
             reader.readAsDataURL(file);
         }
@@ -402,12 +467,19 @@
             });
             
             if (res.ok) {
+                const result = await res.json();
                 alert("Фотоотчет успешно отправлен!");
                 fileInput.value = '';
-                document.getElementById('photoPreview').style.display = 'none';
+                // Устанавливаем флаг загруженного отчета
+                reportUploaded = true;
+                // Обновляем превью с серверной ссылкой
+                const img = document.getElementById('photoPreview');
+                img.src = result.photoUrl;
+                img.style.display = 'block';
+                // Скрываем кнопку загрузки
                 document.getElementById('uploadBtn').style.display = 'none';
-                // Показываем кнопку "Готово" после успешной загрузки фото
-                document.getElementById('completeReportBtn').style.display = 'block';
+                // Показываем сообщение о том, что можно завершить смену
+                alert("Фото загружено! Теперь перейдите на вкладку 'Смена' и нажмите 'Завершить смену'.");
             } else {
                 alert("Ошибка загрузки: " + await res.text());
             }
@@ -417,50 +489,11 @@
     }
 
     async function completeWorkReport() {
-        if (!currentWorkId) {
-            alert("Сначала начните смену");
-            return;
-        }
-
-        // Проверяем, загружено ли фото
-        const photoPreview = document.getElementById('photoPreview');
-        if (photoPreview.style.display === 'none' || !photoPreview.src || photoPreview.src === '') {
-            if (confirm("Фотоотчет не загружен. Завершить смену без фото?")) {
-                finishWork();
-            }
-            return;
-        }
-
-        if (confirm("Подтвердите завершение отчета. Смена будет завершена.")) {
-            finishWork();
-        }
+        // Эта функция больше не используется - удалена из HTML
     }
 
     async function finishWork() {
-        try {
-            const res = await fetch(`/api/work/finish/${currentWorkId}`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ latitude: userLat, longitude: userLon })
-            });
-            
-            if (res.ok) {
-                alert("Отчет завершен! Смена окончена.");
-                isWorking = false;
-                currentWorkId = null;
-                updateUI(false);
-                clearInterval(notificationInterval);
-                document.getElementById('workTimer').textContent = '';
-                document.getElementById('completeReportBtn').style.display = 'none';
-                document.getElementById('photoPreview').style.display = 'none';
-                document.getElementById('uploadBtn').style.display = 'none';
-                document.getElementById('reportPhoto').value = '';
-            } else {
-                alert("Ошибка завершения отчета");
-            }
-        } catch (e) {
-            alert("Ошибка соединения");
-        }
+        // Эта функция больше не используется - завершение через toggleWork()
     }
 
     async function loadHistory() {
