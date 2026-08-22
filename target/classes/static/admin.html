@@ -848,10 +848,10 @@
             endDate = now.toISOString().split('T')[0];
         }
         
-        let url = '/api/reports/period-report?';
+        let url = '/api/reports/work-with-advances?';
         if (employeeId) url += `employeeId=${employeeId}&`;
-        if (startDate) url += `startDate=${startDate}T00:00:00&`;
-        if (endDate) url += `endDate=${endDate}T23:59:59`;
+        if (startDate) url += `startDate=${startDate}&`;
+        if (endDate) url += `endDate=${endDate}`;
         
         const res = await fetch(url);
         const data = await res.json();
@@ -888,7 +888,6 @@
     }
     
     async function displayPeriodReport(data) {
-        const employeeId = document.getElementById('reportEmployeeSelect').value;
         const periodType = document.getElementById('reportPeriodType').value;
         let startDate, endDate;
         
@@ -917,68 +916,23 @@
             return;
         }
         
-        // Группируем данные по сотрудникам
-        const employeeData = {};
-        data.forEach(r => {
-            const empId = r.employee ? r.employee.id : 'unknown';
-            if (!employeeData[empId]) {
-                employeeData[empId] = {
-                    fullName: r.employee ? r.employee.fullName : '-',
-                    hourlyRate: r.employee && r.employee.position ? r.employee.position.hourlyRate : 0,
-                    shifts: 0,
-                    totalHours: 0,
-                    minDate: null,
-                    maxDate: null
-                };
-            }
-            
-            employeeData[empId].shifts++;
-            
-            if (r.startTime && r.endTime) {
-                const start = new Date(r.startTime);
-                const end = new Date(r.endTime);
-                const hoursNum = (end - start) / 3600000;
-                employeeData[empId].totalHours += hoursNum;
-                
-                if (!employeeData[empId].minDate || start < employeeData[empId].minDate) {
-                    employeeData[empId].minDate = start;
-                }
-                if (!employeeData[empId].maxDate || end > employeeData[empId].maxDate) {
-                    employeeData[empId].maxDate = end;
-                }
-            }
-        });
+        // Форматируем даты для отображения
+        const startDateStr = startDate ? new Date(startDate).toLocaleDateString() : '-';
+        const endDateStr = endDate ? new Date(endDate).toLocaleDateString() : '-';
         
         // Отображаем данные по каждому сотруднику с учетом авансов
-        for (const [id, emp] of Object.entries(employeeData)) {
-            const salary = emp.totalHours * emp.hourlyRate;
-            const startDateStr = emp.minDate ? emp.minDate.toLocaleDateString() : '-';
-            const endDateStr = emp.maxDate ? emp.maxDate.toLocaleDateString() : '-';
-            
-            // Получаем сумму авансов за период
-            let totalAdvances = 0;
-            if (id !== 'unknown' && startDate && endDate) {
-                try {
-                    const advancesRes = await fetch(`/api/reports/advances/employee/${id}/total?startDate=${startDate}&endDate=${endDate}`);
-                    if (advancesRes.ok) {
-                        totalAdvances = await advancesRes.json();
-                    }
-                } catch (e) {
-                    console.error('Ошибка загрузки авансов:', e);
-                }
-            }
-            
-            const toPay = salary - totalAdvances;
+        for (const emp of data) {
+            const toPay = emp.earned - emp.totalAdvances;
             
             tbody.innerHTML += `<tr>
-                <td>${emp.fullName}</td>
+                <td>${emp.employeeName}</td>
                 <td>${startDateStr}</td>
                 <td>${endDateStr}</td>
-                <td>${emp.shifts}</td>
-                <td>${emp.totalHours.toFixed(2)}</td>
+                <td>${emp.shiftsCount || 1}</td>
+                <td>${emp.totalHoursWorked ? emp.totalHoursWorked.toFixed(2) : '0.00'}</td>
                 <td>${emp.hourlyRate}</td>
-                <td>${Math.round(salary)}</td>
-                <td>${Math.round(totalAdvances)}</td>
+                <td>${Math.round(emp.earned)}</td>
+                <td>${Math.round(emp.totalAdvances)}</td>
                 <td>${Math.round(toPay)}</td>
             </tr>`;
         }
