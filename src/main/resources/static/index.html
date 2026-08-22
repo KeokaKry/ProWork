@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#007bff">
     <title>Вход сотрудника</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icon-192.png">
     <style>
         body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f0f2f5; margin: 0; }
         .card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 350px; }
@@ -106,8 +109,19 @@
     let lunchNotificationShown = false;
     let notificationInterval = null;
 
-    // Загрузка списка сотрудников при старте
+    // Загрузка списка сотрудников при старте + регистрация Service Worker для PWA
     window.onload = async () => {
+        // Регистрация Service Worker для PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                    console.log('Service Worker зарегистрирован:', registration.scope);
+                })
+                .catch(error => {
+                    console.log('Ошибка регистрации Service Worker:', error);
+                });
+        }
+        
         try {
             const res = await fetch('/api/employees/list');
             const employees = await res.json();
@@ -286,6 +300,15 @@
         }
 
         if (isWorking) {
+            // Завершить - проверяем наличие фотоотчета
+            const photoPreview = document.getElementById('photoPreview');
+            const hasPhoto = photoPreview.style.display !== 'none' && photoPreview.src && photoPreview.src !== '';
+            
+            if (!hasPhoto) {
+                alert("Нельзя завершить смену без фотоотчета! Пожалуйста, загрузите фото на вкладке 'Отчет'.");
+                return;
+            }
+            
             // Завершить
             const res = await fetch(`/api/work/finish/${currentWorkId}`, {
                 method: 'POST',
@@ -422,12 +445,12 @@
             return;
         }
 
-        // Проверяем, загружено ли фото
+        // Проверяем, загружено ли фото - ТЕПЕРЬ БЕЗ ФОТО НЕЛЬЗЯ ЗАВЕРШИТЬ
         const photoPreview = document.getElementById('photoPreview');
-        if (photoPreview.style.display === 'none' || !photoPreview.src || photoPreview.src === '') {
-            if (confirm("Фотоотчет не загружен. Завершить смену без фото?")) {
-                finishWork();
-            }
+        const hasPhoto = photoPreview.style.display !== 'none' && photoPreview.src && photoPreview.src !== '';
+        
+        if (!hasPhoto) {
+            alert("Необходимо загрузить фотоотчет перед завершением смены!");
             return;
         }
 

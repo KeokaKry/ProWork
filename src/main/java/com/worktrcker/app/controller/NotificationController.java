@@ -21,7 +21,7 @@ public class NotificationController {
     private WorkRecordRepository workRecordRepository;
 
     // Проверка необходимости уведомления о перерыве
-    // Вызывается мобильным приложением каждые несколько минут
+    // Вызывается мобильным приложением каждые 30 секунд
     @GetMapping("/check-break/{employeeId}")
     public ResponseEntity<?> checkBreakNotification(@PathVariable Long employeeId) {
         Map<String, Object> response = new HashMap<>();
@@ -47,31 +47,33 @@ public class NotificationController {
         Duration worked = Duration.between(workStartTime, now);
         long workedMinutes = worked.toMinutes();
         
-        // Проверка на обед (через 4 часа = 240 минут)
-        if (workedMinutes == 240) {
+        // Проверка на обед (через 4 часа = 240 минут) - уведомляем в диапазоне 240-241 минута
+        if (workedMinutes >= 240 && workedMinutes < 241) {
             response.put("notify", true);
             response.put("type", "LUNCH_START");
             response.put("message", "Обед начался! У вас есть 60 минут.");
             return ResponseEntity.ok(response);
         }
         
-        if (workedMinutes == 300) {
+        // Конец обеда (через 5 часов = 300 минут) - уведомляем в диапазоне 300-301 минута
+        if (workedMinutes >= 300 && workedMinutes < 301) {
             response.put("notify", true);
             response.put("type", "LUNCH_END");
             response.put("message", "Обед закончен! Пора приступать к работе.");
             return ResponseEntity.ok(response);
         }
         
-        // Проверка на короткий перерыв (за 10 минут до конца часа)
+        // Проверка на короткий перерыв (за 10 минут до конца часа) - уведомляем в диапазоне 50-51 минута каждого часа
         long minutesInHour = workedMinutes % 60;
-        if (minutesInHour == 50) {
+        if (minutesInHour >= 50 && minutesInHour < 51) {
             response.put("notify", true);
             response.put("type", "SHORT_BREAK_START");
             response.put("message", "Пора отдохнуть! Перерыв 10 минут.");
             return ResponseEntity.ok(response);
         }
         
-        if (minutesInHour == 0 && workedMinutes > 0) {
+        // Конец короткого перерыва (ровно в 00 минут следующего часа) - уведомляем в диапазоне 0-1 минута
+        if (minutesInHour >= 0 && minutesInHour < 1 && workedMinutes > 0) {
             response.put("notify", true);
             response.put("type", "SHORT_BREAK_END");
             response.put("message", "Перерыв окончен! Пора приступать к работе.");
