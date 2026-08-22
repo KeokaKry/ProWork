@@ -14,7 +14,7 @@ public class Advance {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
-    private User employee;
+    private Employee employee;
 
     @Column(name = "amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
@@ -28,7 +28,7 @@ public class Advance {
     public Advance() {
     }
 
-    public Advance(User employee, BigDecimal amount, LocalDate date, String comment) {
+    public Advance(Employee employee, BigDecimal amount, LocalDate date, String comment) {
         this.employee = employee;
         this.amount = amount;
         this.date = date;
@@ -44,11 +44,11 @@ public class Advance {
         this.id = id;
     }
 
-    public User getEmployee() {
+    public Employee getEmployee() {
         return employee;
     }
 
-    public void setEmployee(User employee) {
+    public void setEmployee(Employee employee) {
         this.employee = employee;
     }
 

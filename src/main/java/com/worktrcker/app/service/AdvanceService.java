@@ -1,8 +1,9 @@
 package com.worktrcker.app.service;
 
 import com.worktrcker.app.model.Advance;
-import com.worktrcker.app.model.User;
+import com.worktrcker.app.model.Employee;
 import com.worktrcker.app.repository.AdvanceRepository;
+import com.worktrcker.app.repository.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,13 +20,11 @@ public class AdvanceService {
     private AdvanceRepository advanceRepository;
 
     @Autowired
-    private UserService userService;
+    private EmployeeRepository employeeRepository;
 
     public Advance createAdvance(Long employeeId, BigDecimal amount, LocalDate date, String comment) {
-        User employee = userService.findById(employeeId);
-        if (employee == null) {
-            throw new IllegalArgumentException("Сотрудник не найден");
-        }
+        Employee employee = employeeRepository.findById(employeeId)
+            .orElseThrow(() -> new IllegalArgumentException("Сотрудник не найден"));
         Advance advance = new Advance(employee, amount, date != null ? date : LocalDate.now(), comment);
         return advanceRepository.save(advance);
     }
