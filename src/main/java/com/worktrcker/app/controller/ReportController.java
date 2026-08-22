@@ -272,6 +272,11 @@ public class ReportController {
         // Формируем ответ с расчетом авансов и итоговой суммы
         List<Map<String, Object>> result = new java.util.ArrayList<>();
         for (WorkRecord record : records) {
+            // Пропускаем записи без сотрудника
+            if (record.getEmployee() == null) {
+                continue;
+            }
+            
             Long empId = record.getEmployee().getId();
             LocalDate recStartDate = record.getStartTime().toLocalDate();
             LocalDate recEndDate = record.getEndTime() != null ? record.getEndTime().toLocalDate() : recStartDate;
@@ -285,7 +290,7 @@ public class ReportController {
             BigDecimal hourlyRate = BigDecimal.ZERO;
             double hoursWorked = 0;
             if (record.getStartTime() != null && record.getEndTime() != null) {
-                hoursWorked = java.time.Duration.between(record.getStartTime(), record.getEndTime()).toHours();
+                hoursWorked = java.time.Duration.between(record.getStartTime(), record.getEndTime()).toMinutes() / 60.0;
                 // Ставку берем из позиции сотрудника
                 if (record.getEmployee().getPosition() != null && 
                     record.getEmployee().getPosition().getHourlyRate() != null) {
