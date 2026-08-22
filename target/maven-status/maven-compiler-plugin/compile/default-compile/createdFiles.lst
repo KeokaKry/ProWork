@@ -4,6 +4,7 @@ com/worktrcker/app/model/GeoZone.class
 com/worktrcker/app/controller/WorkController.class
 com/worktrcker/app/controller/GeoZoneController.class
 com/worktrcker/app/controller/NotificationController.class
+com/worktrcker/app/controller/AdvanceController.class
 com/worktrcker/app/repository/EmployeeRepository.class
 com/worktrcker/app/config/WebConfig$1.class
 com/worktrcker/app/repository/AdvanceRepository.class
