@@ -227,7 +227,8 @@
         document.getElementById('workPanel').style.display = 'block';
         document.getElementById('welcomeText').textContent = `Привет, ${currentUser.fullName}`;
         checkActiveWork();
-        loadDailyTask();
+        // Загружаем задание только после проверки активной смены
+        // Вкладка задания будет показана только если есть активная смена и_pending_ задание
     }
 
     function showWorkTab(tabName) {
@@ -261,8 +262,15 @@
             updateUI(true);
             startNotificationChecker();
             startTimer(data.startTime);
+            // Загружаем задание только после начала активной смены
+            loadDailyTask();
         } else {
             updateUI(false);
+            // Скрываем вкладку задания если нет активной смены
+            const taskTabBtn = document.getElementById('taskTabBtn');
+            if (taskTabBtn) {
+                taskTabBtn.style.display = 'none';
+            }
         }
     }
 
@@ -339,10 +347,12 @@
             badge.textContent = "Статус: Работает";
             badge.style.background = "#d4edda";
             badge.style.color = "#155724";
-            // Показываем кнопку "Задание выполнено" если есть активное задание
+            // Показываем кнопку "Задание выполнено" если есть активное задание со статусом PENDING
             loadDailyTask().then(hasTask => {
                 if (hasTask && completeBtn) {
                     completeBtn.style.display = 'block';
+                } else if (completeBtn) {
+                    completeBtn.style.display = 'none';
                 }
             });
         } else {
@@ -397,6 +407,9 @@
                 isWorking = true;
                 currentWorkId = data.id;
                 reportUploaded = false; // Сбрасываем флаг при начале новой смены
+                breakNotificationShown = false; // Сбрасываем флаги уведомлений
+                lunchNotificationShown = false;
+                window.taskNotificationShown = false;
                 updateUI(true);
                 startNotificationChecker();
                 startTimer(new Date().toISOString());
@@ -409,34 +422,29 @@
             const res = await fetch(`/api/tasks/employee/${currentUser.id}`);
             const tasks = await res.json();
             
+            // Скрываем вкладку задания по умолчанию
+            const taskTabBtn = document.getElementById('taskTabBtn');
+            if (taskTabBtn) {
+                taskTabBtn.style.display = 'none';
+            }
+            
             // Найти последнее задание
             if (tasks.length > 0) {
                 const lastTask = tasks[tasks.length - 1];
                 if (lastTask.dailyTask) {
                     document.getElementById('dailyTask').textContent = lastTask.dailyTask;
-                    // Показываем вкладку "Задание" если есть активное задание со статусом PENDING
-                    const taskTabBtn = document.getElementById('taskTabBtn');
-                    if (taskTabBtn && lastTask.status === 'PENDING') {
-                        taskTabBtn.style.display = 'block';
-                        // Показываем уведомление о новом задании
-                        showNotification("Внимание! Вам назначено задание. Перейдите на вкладку 'Задание'.");
+                    // Показываем вкладку "Задание" только если есть активная смена И задание со статусом PENDING
+                    if (isWorking && currentWorkId && lastTask.status === 'PENDING') {
+                        if (taskTabBtn) {
+                            taskTabBtn.style.display = 'block';
+                        }
+                        // Показываем уведомление о новом задании только один раз
+                        if (!window.taskNotificationShown) {
+                            showNotification("Внимание! Вам назначено задание. Перейдите на вкладку 'Задание'.");
+                            window.taskNotificationShown = true;
+                        }
                         return true;
-                    } else if (taskTabBtn) {
-                        // Скрываем если задание выполнено или отсутствует
-                        taskTabBtn.style.display = 'none';
                     }
-                } else {
-                    // Нет задания - скрываем вкладку
-                    const taskTabBtn = document.getElementById('taskTabBtn');
-                    if (taskTabBtn) {
-                        taskTabBtn.style.display = 'none';
-                    }
-                }
-            } else {
-                // Нет заданий вообще - скрываем вкладку
-                const taskTabBtn = document.getElementById('taskTabBtn');
-                if (taskTabBtn) {
-                    taskTabBtn.style.display = 'none';
                 }
             }
             return false;
@@ -596,6 +604,8 @@
     }
 
     function logout() {
+        // Сбрасываем флаг уведомления о задании при выходе
+        window.taskNotificationShown = false;
         location.reload();
     }
 </script>
