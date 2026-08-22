@@ -3,7 +3,8 @@
 *.class
 target/
 # Dependencies
-# Logs and temp files
-# Environment
+node_modules/
 # Editors
+.vscode/
+.idea/
 ```
