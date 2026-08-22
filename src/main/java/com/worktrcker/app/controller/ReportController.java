@@ -1,8 +1,11 @@
 package com.worktrcker.app.controller;
 
+import com.worktrcker.app.model.Advance;
 import com.worktrcker.app.model.WorkRecord;
 import com.worktrcker.app.repository.WorkRecordRepository;
+import com.worktrcker.app.service.AdvanceService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -12,10 +15,12 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +34,9 @@ public class ReportController {
     
     @Autowired
     private WorkRecordRepository workRecordRepository;
+
+    @Autowired
+    private AdvanceService advanceService;
     
     private static final String UPLOAD_DIR = "uploads/reports";
 
@@ -161,5 +169,142 @@ public class ReportController {
         } catch (MalformedURLException e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    // === API для авансов ===
+
+    // Сохранить аванс
+    @PostMapping("/advance")
+    public ResponseEntity<?> saveAdvance(
+            @RequestParam Long employeeId,
+            @RequestParam BigDecimal amount,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) String comment) {
+        try {
+            Advance advance = advanceService.createAdvance(employeeId, amount, date, comment);
+            return ResponseEntity.ok(advance);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Ошибка сохранения аванса: " + e.getMessage());
+        }
+    }
+
+    // Получить все авансы сотрудника
+    @GetMapping("/advances/employee/{employeeId}")
+    public ResponseEntity<List<Advance>> getEmployeeAdvances(@PathVariable Long employeeId) {
+        return ResponseEntity.ok(advanceService.getAdvancesByEmployee(employeeId));
+    }
+
+    // Получить авансы сотрудника за период
+    @GetMapping("/advances/employee/{employeeId}/period")
+    public ResponseEntity<List<Advance>> getEmployeeAdvancesByPeriod(
+            @PathVariable Long employeeId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(advanceService.getAdvancesByEmployeeAndPeriod(employeeId, startDate, endDate));
+    }
+
+    // Получить сумму авансов сотрудника за период
+    @GetMapping("/advances/employee/{employeeId}/total")
+    public ResponseEntity<BigDecimal> getEmployeeTotalAdvances(
+            @PathVariable Long employeeId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        BigDecimal total = advanceService.getTotalAdvancesByEmployeeAndPeriod(employeeId, startDate, endDate);
+        return ResponseEntity.ok(total);
+    }
+
+    // Получить все авансы (для админа)
+    @GetMapping("/advances/all")
+    public ResponseEntity<List<Advance>> getAllAdvances() {
+        return ResponseEntity.ok(advanceService.getAllAdvances());
+    }
+
+    // Получить авансы за период (для админа)
+    @GetMapping("/advances/period")
+    public ResponseEntity<List<Advance>> getAdvancesByPeriod(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(advanceService.getAdvancesByPeriod(startDate, endDate));
+    }
+
+    // Удалить аванс
+    @DeleteMapping("/advance/{id}")
+    public ResponseEntity<?> deleteAdvance(@PathVariable Long id) {
+        try {
+            advanceService.deleteAdvance(id);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Ошибка удаления аванса: " + e.getMessage());
+        }
+    }
+
+    // Отчет по сменам с авансами (для админа)
+    @GetMapping("/work-with-advances")
+    public ResponseEntity<List<Map<String, Object>>> getWorkRecordsWithAdvances(
+            @RequestParam(required = false) Long employeeId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        
+        List<WorkRecord> records;
+        if (employeeId != null) {
+            records = workRecordRepository.findByEmployeeId(employeeId);
+        } else {
+            records = workRecordRepository.findAll();
+        }
+
+        // Фильтрация по датам если указаны
+        if (startDate != null) {
+            LocalDateTime startDateTime = startDate.atStartOfDay();
+            records = records.stream()
+                .filter(r -> r.getStartTime() != null && !r.getStartTime().isBefore(startDateTime))
+                .toList();
+        }
+        
+        if (endDate != null) {
+            LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
+            records = records.stream()
+                .filter(r -> r.getEndTime() != null && !r.getEndTime().isAfter(endDateTime))
+                .toList();
+        }
+
+        // Формируем ответ с расчетом авансов и итоговой суммы
+        return ResponseEntity.ok(records.stream().map(record -> {
+            Long empId = record.getEmployee().getId();
+            LocalDate recStartDate = record.getStartTime().toLocalDate();
+            LocalDate recEndDate = record.getEndTime() != null ? record.getEndTime().toLocalDate() : recStartDate;
+            
+            // Получаем сумму авансов за период работы сотрудника
+            BigDecimal totalAdvances = advanceService.getTotalAdvancesByEmployeeAndPeriod(
+                empId, recStartDate, recEndDate);
+            
+            // Расчет заработанного (часы * ставка)
+            BigDecimal earned = BigDecimal.ZERO;
+            if (record.getStartTime() != null && record.getEndTime() != null) {
+                long hoursWorked = java.time.Duration.between(record.getStartTime(), record.getEndTime()).toHours();
+                BigDecimal hourlyRate = record.getEmployee().getHourlyRate() != null ? 
+                    record.getEmployee().getHourlyRate() : BigDecimal.ZERO;
+                earned = hourlyRate.multiply(BigDecimal.valueOf(hoursWorked));
+            }
+            
+            // Итоговая сумма к выдаче
+            BigDecimal toPay = earned.subtract(totalAdvances);
+            
+            return Map.<String, Object>of(
+                "id", record.getId(),
+                "employeeId", empId,
+                "employeeName", record.getEmployee().getFullName(),
+                "startTime", record.getStartTime(),
+                "endTime", record.getEndTime(),
+                "hoursWorked", record.getHoursWorked(),
+                "hourlyRate", record.getHourlyRate(),
+                "earned", earned,
+                "totalAdvances", totalAdvances,
+                "toPay", toPay,
+                "status", record.getStatus(),
+                "reportPhotoUrl", record.getReportPhotoUrl()
+            );
+        }).toList());
     }
 }
