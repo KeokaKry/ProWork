@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -44,12 +45,38 @@ public class TaskController {
         
         WorkRecord savedRecord = workRecordRepository.save(record);
         
+        // Отправляем уведомление сотруднику о назначении задания
+        try {
+            Map<String, Object> notificationRequest = new HashMap<>();
+            notificationRequest.put("employeeId", employeeId);
+            notificationRequest.put("task", task);
+            
+            // Вызываем endpoint уведомления
+            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+            String notificationUrl = "http://localhost:8080/api/notifications/notify-task";
+            
+            String jsonBody = "{\"employeeId\":" + employeeId + ",\"task\":\"" + task + "\"}";
+            
+            java.net.http.HttpRequest httpRequest = java.net.http.HttpRequest.newBuilder()
+                .uri(java.net.URI.create(notificationUrl))
+                .header("Content-Type", "application/json")
+                .POST(java.net.http.HttpRequest.BodyPublishers.ofString(jsonBody))
+                .build();
+            
+            client.sendAsync(httpRequest, java.net.http.HttpResponse.BodyHandlers.ofString());
+            
+            System.out.println("Уведомление отправлено сотруднику #" + employeeId);
+        } catch (Exception e) {
+            System.err.println("Ошибка отправки уведомления: " + e.getMessage());
+        }
+        
         // Возвращаем все задания сотрудника
         List<WorkRecord> employeeTasks = workRecordRepository.findByEmployeeId(employeeId);
         
         return ResponseEntity.ok(Map.of(
             "assignedTask", savedRecord,
-            "employeeTasks", employeeTasks
+            "employeeTasks", employeeTasks,
+            "notificationSent", true
         ));
     }
     

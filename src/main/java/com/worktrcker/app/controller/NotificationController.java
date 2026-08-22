@@ -83,4 +83,21 @@ public class NotificationController {
         response.put("notify", false);
         return ResponseEntity.ok(response);
     }
+    
+    // Отправка уведомления о назначении задания сотруднику
+    @PostMapping("/notify-task")
+    public ResponseEntity<?> notifyTaskAssignment(@RequestBody Map<String, Object> request) {
+        Long employeeId = Long.valueOf(request.get("employeeId").toString());
+        String task = (String) request.get("task");
+        
+        // В реальном приложении здесь была бы отправка push-уведомления
+        // Сейчас просто логируем событие
+        System.out.println("УВЕДОМЛЕНИЕ СОТРУДНИКУ #" + employeeId + ": Вам назначено задание - " + task);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Уведомление отправлено");
+        
+        return ResponseEntity.ok(response);
+    }
 }
