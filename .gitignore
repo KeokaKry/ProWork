@@ -3,6 +3,16 @@
 *.class
 target/
 
+# Dependencies
+.m2/
+.gradle/
+
 # Logs and temp files
 *.log
+*.tmp
+*.swp
+
+# Editors
+.vscode/
+.idea/
 ```
