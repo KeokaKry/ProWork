@@ -1236,7 +1236,16 @@
             } else if (periodType === 'month') {
                 startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
                 endDate = now.toISOString().split('T')[0];
+            } else {
+                // По умолчанию - текущий месяц
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+                endDate = now.toISOString().split('T')[0];
             }
+        }
+        
+        if (!startDate || !endDate) {
+            console.error('Даты не установлены');
+            return;
         }
         
         let url = '/api/advances/period?startDate=' + startDate + '&endDate=' + endDate;
@@ -1244,26 +1253,41 @@
             url = '/api/advances/employee/' + employeeId + '/period?startDate=' + startDate + '&endDate=' + endDate;
         }
         
-        const res = await fetch(url);
-        const advances = await res.json();
+        console.log('Запрос авансов:', url);
         
-        const tbody = document.getElementById('advancesTable');
-        tbody.innerHTML = '';
-        
-        advances.forEach(a => {
-            tbody.innerHTML += `
-                <tr>
-                    <td>${a.employee.fullName}</td>
-                    <td>${a.date}</td>
-                    <td>${a.amount.toFixed(2)}</td>
-                    <td>${a.comment || '-'}</td>
-                    <td><button class="danger" onclick="deleteAdvance(${a.id})">Удалить</button></td>
-                </tr>
-            `;
-        });
-        
-        // Загружаем сводку
-        loadAdvancesSummary(startDate, endDate);
+        try {
+            const res = await fetch(url);
+            if (!res.ok) {
+                console.error('Ошибка запроса:', res.status);
+                return;
+            }
+            const advances = await res.json();
+            console.log('Получены авансы:', advances);
+            
+            const tbody = document.getElementById('advancesTable');
+            tbody.innerHTML = '';
+            
+            if (advances.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5">Нет данных за выбранный период</td></tr>';
+            } else {
+                advances.forEach(a => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${a.employee.fullName}</td>
+                            <td>${a.date}</td>
+                            <td>${a.amount.toFixed(2)}</td>
+                            <td>${a.comment || '-'}</td>
+                            <td><button class="danger" onclick="deleteAdvance(${a.id})">Удалить</button></td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            // Загружаем сводку
+            loadAdvancesSummary(startDate, endDate);
+        } catch (e) {
+            console.error('Ошибка при загрузке авансов:', e);
+        }
     }
     
     async function loadAdvancesSummary(startDate, endDate) {
@@ -1273,19 +1297,30 @@
         const tbody = document.getElementById('advancesSummaryTable');
         tbody.innerHTML = '';
         
+        let hasData = false;
         for (const emp of employees) {
-            const totalRes = await fetch(`/api/advances/employee/${emp.id}/total?startDate=${startDate}&endDate=${endDate}`);
-            const data = await totalRes.json();
-            const total = data.totalAmount || 0;
-            
-            if (total > 0) {
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${emp.fullName}</td>
-                        <td>${total.toFixed(2)}</td>
-                    </tr>
-                `;
+            try {
+                const totalRes = await fetch(`/api/advances/employee/${emp.id}/total?startDate=${startDate}&endDate=${endDate}`);
+                if (!totalRes.ok) continue;
+                const data = await totalRes.json();
+                const total = data.totalAmount || 0;
+                
+                if (total > 0) {
+                    hasData = true;
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${emp.fullName}</td>
+                            <td>${total.toFixed(2)}</td>
+                        </tr>
+                    `;
+                }
+            } catch (e) {
+                console.error('Ошибка при загрузке сводки для сотрудника', emp.id, e);
             }
+        }
+        
+        if (!hasData) {
+            tbody.innerHTML = '<tr><td colspan="2">Нет данных за выбранный период</td></tr>';
         }
     }
     
