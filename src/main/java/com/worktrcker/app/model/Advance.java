@@ -1,5 +1,6 @@
 package com.worktrcker.app.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -14,6 +15,7 @@ public class Advance {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
+    @JsonIgnoreProperties({"geoZones", "workRecords", "hibernateLazyInitializer"})
     private Employee employee;
 
     @Column(name = "amount", nullable = false, precision = 10, scale = 2)
