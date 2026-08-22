@@ -2,17 +2,8 @@
 # Compiled and build artifacts
 *.class
 target/
-
 # Dependencies
-.m2/
-.gradle/
-
 # Logs and temp files
-*.log
-*.tmp
-*.swp
-
+# Environment
 # Editors
-.vscode/
-.idea/
 ```

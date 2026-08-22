@@ -52,8 +52,7 @@ public class WorkController {
 
         Employee employee = empOpt.get();
         
-        // Проверка геозоны (закомментировано для тестов)
-        /*
+        // Проверка геозоны - сотрудник должен находиться в радиусе назначенной геозоны
         if (employee.getGeoZones() != null && !employee.getGeoZones().isEmpty()) {
             boolean inZone = false;
             for (var zone : employee.getGeoZones()) {
@@ -70,7 +69,6 @@ public class WorkController {
                 return ResponseEntity.badRequest().body("Вы находитесь вне разрешенной геозоны!");
             }
         }
-        */
 
         WorkRecord record = new WorkRecord();
         record.setEmployee(employee);
@@ -88,6 +86,26 @@ public class WorkController {
         if (recordOpt.isEmpty()) return ResponseEntity.badRequest().body("Запись не найдена");
 
         WorkRecord record = recordOpt.get();
+        Employee employee = record.getEmployee();
+        
+        // Проверка геозоны при завершении смены - сотрудник должен находиться в радиусе назначенной геозоны
+        if (employee.getGeoZones() != null && !employee.getGeoZones().isEmpty()) {
+            boolean inZone = false;
+            for (var zone : employee.getGeoZones()) {
+                double distance = calculateDistance(
+                    location.get("latitude"), location.get("longitude"),
+                    zone.getLatitude(), zone.getLongitude()
+                );
+                if (distance <= zone.getRadius()) {
+                    inZone = true;
+                    break;
+                }
+            }
+            if (!inZone) {
+                return ResponseEntity.badRequest().body("Вы находитесь вне разрешенной геозоны! Завершение смены невозможно.");
+            }
+        }
+        
         record.setEndTime(LocalDateTime.now());
         record.setStatus("COMPLETED");
         record.setEndLat(location.get("latitude"));
