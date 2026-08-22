@@ -31,4 +31,10 @@ public class WorkRecord {
     private String dailyTask; // Задание на день от админа
     
     private String reportPhotoUrl; // Ссылка на фотоотчет
+    
+    // Флаги для уведомлений о перерывах и обеде
+    private Boolean lunchNotified; // Уведомление о начале обеда отправлено
+    private Boolean lunchEndNotified; // Уведомление о конце обеда отправлено
+    private Long lastBreakMinute; // Минута последнего уведомления о начале перерыва
+    private Long lastBreakEndMinute; // Минута последнего уведомления о конце перерыва
 }

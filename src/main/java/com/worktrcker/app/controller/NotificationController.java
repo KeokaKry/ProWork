@@ -47,37 +47,62 @@ public class NotificationController {
         Duration worked = Duration.between(workStartTime, now);
         long workedMinutes = worked.toMinutes();
         
-        // Проверка на обед (через 4 часа = 240 минут) - уведомляем в диапазоне 240-241 минута
-        if (workedMinutes >= 240 && workedMinutes < 241) {
+        // Проверка на обед (через 4 часа = 240 минут) - расширяем диапазон до 5 минут
+        // Уведомляем в диапазоне 240-245 минут, но только если еще не был показан флаг lunchNotified
+        Boolean lunchNotified = activeRecord.getLunchNotified();
+        if (workedMinutes >= 240 && workedMinutes < 245 && (lunchNotified == null || !lunchNotified)) {
             response.put("notify", true);
             response.put("type", "LUNCH_START");
             response.put("message", "Обед начался! У вас есть 60 минут.");
+            // Помечаем, что уведомление об обеде было отправлено
+            activeRecord.setLunchNotified(true);
+            workRecordRepository.save(activeRecord);
             return ResponseEntity.ok(response);
         }
         
-        // Конец обеда (через 5 часов = 300 минут) - уведомляем в диапазоне 300-301 минута
-        if (workedMinutes >= 300 && workedMinutes < 301) {
+        // Конец обеда (через 5 часов = 300 минут) - расширяем диапазон до 5 минут
+        Boolean lunchEndNotified = activeRecord.getLunchEndNotified();
+        if (workedMinutes >= 300 && workedMinutes < 305 && (lunchEndNotified == null || !lunchEndNotified)) {
             response.put("notify", true);
             response.put("type", "LUNCH_END");
             response.put("message", "Обед закончен! Пора приступать к работе.");
+            activeRecord.setLunchEndNotified(true);
+            workRecordRepository.save(activeRecord);
             return ResponseEntity.ok(response);
         }
         
-        // Проверка на короткий перерыв (за 10 минут до конца часа) - уведомляем в диапазоне 50-51 минута каждого часа
+        // Проверка на короткий перерыв (за 10 минут до конца часа) - расширяем диапазон до 3 минут
+        // Уведомляем в диапазоне 50-53 минуты каждого часа
         long minutesInHour = workedMinutes % 60;
-        if (minutesInHour >= 50 && minutesInHour < 51) {
-            response.put("notify", true);
-            response.put("type", "SHORT_BREAK_START");
-            response.put("message", "Пора отдохнуть! Перерыв 10 минут.");
-            return ResponseEntity.ok(response);
+        // Проверяем, что это не первый час (workedMinutes >= 50) и уведомление еще не было показано для этого часа
+        Long lastBreakMinute = activeRecord.getLastBreakMinute();
+        long currentBreakHour = workedMinutes / 60;
+        
+        if (minutesInHour >= 50 && minutesInHour < 53 && workedMinutes >= 50) {
+            // Если это новый час или уведомление еще не было показано
+            if (lastBreakMinute == null || (lastBreakMinute / 60) != currentBreakHour) {
+                response.put("notify", true);
+                response.put("type", "SHORT_BREAK_START");
+                response.put("message", "Пора отдохнуть! Перерыв 10 минут.");
+                activeRecord.setLastBreakMinute(workedMinutes);
+                workRecordRepository.save(activeRecord);
+                return ResponseEntity.ok(response);
+            }
         }
         
-        // Конец короткого перерыва (ровно в 00 минут следующего часа) - уведомляем в диапазоне 0-1 минута
-        if (minutesInHour >= 0 && minutesInHour < 1 && workedMinutes > 0) {
-            response.put("notify", true);
-            response.put("type", "SHORT_BREAK_END");
-            response.put("message", "Перерыв окончен! Пора приступать к работе.");
-            return ResponseEntity.ok(response);
+        // Конец короткого перерыва (ровно в 00 минут следующего часа) - расширяем диапазон до 3 минут
+        Long lastBreakEndMinute = activeRecord.getLastBreakEndMinute();
+        if (minutesInHour >= 0 && minutesInHour < 3 && workedMinutes > 0) {
+            long breakEndHour = (workedMinutes / 60) - 1; // Предыдущий час
+            // Если это новый час для окончания перерыва
+            if (lastBreakEndMinute == null || (lastBreakEndMinute / 60) != breakEndHour) {
+                response.put("notify", true);
+                response.put("type", "SHORT_BREAK_END");
+                response.put("message", "Перерыв окончен! Пора приступать к работе.");
+                activeRecord.setLastBreakEndMinute(workedMinutes);
+                workRecordRepository.save(activeRecord);
+                return ResponseEntity.ok(response);
+            }
         }
         
         response.put("notify", false);

@@ -33,6 +33,9 @@
         .nav-tab.active { background: #007bff; color: white; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+        /* Стили для кнопки установки PWA */
+        #installButton { display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #28a745; color: white; padding: 15px 30px; border-radius: 50px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1001; font-size: 16px; font-weight: bold; border: none; cursor: pointer; }
+        #installButton:hover { background: #218838; }
     </style>
 </head>
 <body>
@@ -98,6 +101,9 @@
 
 <div id="notification" class="notification"></div>
 
+<!-- Кнопка установки PWA -->
+<button id="installButton" onclick="installPWA()">📲 Установить приложение</button>
+
 <script>
     let currentUser = null;
     let currentWorkId = null;
@@ -108,6 +114,7 @@
     let lunchNotificationShown = false;
     let notificationInterval = null;
     let reportUploaded = false; // Флаг загруженного фотоотчета
+    let deferredPrompt = null; // Для установки PWA
 
     // Загрузка списка сотрудников при старте + регистрация Service Worker для PWA
     window.onload = async () => {
@@ -121,6 +128,22 @@
                     console.log('Ошибка регистрации Service Worker:', error);
                 });
         }
+        
+        // Обработчик события beforeinstallprompt для кнопки установки PWA
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Показываем кнопку установки
+            document.getElementById('installButton').style.display = 'block';
+            console.log('PWA можно установить');
+        });
+        
+        // Обработчик успешной установки
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA установлено');
+            document.getElementById('installButton').style.display = 'none';
+            deferredPrompt = null;
+        });
         
         try {
             const res = await fetch('/api/employees/list');
@@ -150,6 +173,23 @@
             }, { enableHighAccuracy: true, timeout: 10000 });
         }
     };
+    
+    // Функция установки PWA
+    async function installPWA() {
+        if (!deferredPrompt) {
+            alert('Установка невозможна в этом браузере. Попробуйте Chrome на Android.');
+            return;
+        }
+        
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`Пользователь выбрал: ${outcome}`);
+        
+        if (outcome === 'accepted') {
+            document.getElementById('installButton').style.display = 'none';
+        }
+        deferredPrompt = null;
+    }
 
     async function login() {
         const fullName = document.getElementById('fullNameSelect').value;
@@ -247,11 +287,22 @@
                 const data = await res.json();
                 
                 if (data.notify) {
-                    showNotification(data.message);
+                    // Проверяем локальные флаги для предотвращения повторных уведомлений
+                    let shouldShow = true;
                     
-                    // Сброс флагов для повторных уведомлений
-                    if (data.type === 'LUNCH_START') lunchNotificationShown = false;
-                    if (data.type === 'SHORT_BREAK_START') breakNotificationShown = false;
+                    if (data.type === 'LUNCH_START' && lunchNotificationShown) {
+                        shouldShow = false;
+                    } else if (data.type === 'SHORT_BREAK_START' && breakNotificationShown) {
+                        shouldShow = false;
+                    }
+                    
+                    if (shouldShow) {
+                        showNotification(data.message);
+                        
+                        // Устанавливаем локальные флаги
+                        if (data.type === 'LUNCH_START') lunchNotificationShown = true;
+                        if (data.type === 'SHORT_BREAK_START') breakNotificationShown = true;
+                    }
                 }
                 
                 // Проверяем наличие нового задания (для уведомления о назначении)
