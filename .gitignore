@@ -1,25 +1,39 @@
 ```
-# Java/Maven build artifacts
-target/
+# Compiled and build artifacts
 *.class
-
-# Maven status files
-target/maven-status/
+*.o
+*.obj
+*.out
+target/
 
 # Dependencies
-lib/
-libs/
+node_modules/
+venv/
+.venv/
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+.gradle/
 
-# Logs
+# Logs and temp files
 *.log
+*.tmp
+*.swp
 
-# IDE files
+# Editors
+.vscode/
 .idea/
-*.iml
-*.ipr
-*.iws
 
-# OS files
-.DS_Store
-Thumbs.db
+# Environment
+.env
+.env.local
+*.env.*
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Maven specific
+maven-status/
 ```
