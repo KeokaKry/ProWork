@@ -66,7 +66,7 @@ public class WorkController {
                 }
             }
             if (!inZone) {
-                return ResponseEntity.badRequest().body("Вы находитесь вне разрешенной геозоны!");
+                return ResponseEntity.badRequest().body("Вы находитесь вне разрешенной геозоны! Для начала смены необходимо находиться на рабочем месте.");
             }
         }
 
@@ -102,7 +102,7 @@ public class WorkController {
                 }
             }
             if (!inZone) {
-                return ResponseEntity.badRequest().body("Вы находитесь вне разрешенной геозоны! Завершение смены невозможно.");
+                return ResponseEntity.badRequest().body("Вы находитесь вне разрешенной геозоны! Для завершения смены необходимо находиться на рабочем месте.");
             }
         }
         
