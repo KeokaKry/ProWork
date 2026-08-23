@@ -1,9 +1,4 @@
 ```
-# Compiled and build artifacts
-*.class
 target/
-# Dependencies
-# Logs and temp files
-# Environment
-# Editors
+*.class
 ```

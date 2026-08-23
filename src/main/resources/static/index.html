@@ -394,6 +394,9 @@
                 clearInterval(notificationInterval);
                 document.getElementById('workTimer').textContent = '';
                 alert("Смена завершена!");
+            } else {
+                const errorMsg = await res.text();
+                alert(errorMsg || "Ошибка при завершении смены. Убедитесь, что вы находитесь на рабочем месте.");
             }
         } else {
             // Начать
@@ -413,6 +416,9 @@
                 updateUI(true);
                 startNotificationChecker();
                 startTimer(new Date().toISOString());
+            } else {
+                const errorMsg = await res.text();
+                alert(errorMsg || "Ошибка при начале смены. Убедитесь, что вы находитесь на рабочем месте.");
             }
         }
     }
