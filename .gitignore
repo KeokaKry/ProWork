@@ -1,10 +1,4 @@
 ```
-# Compiled and build artifacts
-*.class
 target/
-# Dependencies
-node_modules/
-# Editors
-.vscode/
-.idea/
+*.class
 ```
