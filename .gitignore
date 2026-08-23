@@ -1,7 +1,17 @@
 ```
-# Logs
-*.log
-
-# Build artifacts
+# Compiled and build artifacts
+*.pyc
+__pycache__/
+*.o
+*.obj
 target/
+
+# Logs and temp files
+*.log
+server.log
+
+# Dependencies
+node_modules/
+venv/
+.venv/
 ```

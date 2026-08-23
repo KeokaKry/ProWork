@@ -454,7 +454,12 @@
                 alert(errorMsg || "Ошибка при завершении смены. Убедитесь, что вы находитесь на рабочем месте.");
             }
         } else {
-            // Начать
+            // Начать - проверяем наличие геолокации перед отправкой запроса
+            if (!userLat || !userLon) {
+                showNotification("⚠️ Внимание: Необходимо включить геолокацию для начала смены.");
+                return;
+            }
+            
             const res = await fetch('/api/work/start', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
