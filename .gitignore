@@ -1,36 +1,17 @@
 ```
 # Compiled and build artifacts
-*.class
+*.pyc
+__pycache__/
 *.o
 *.obj
-*.exe
-*.dll
-*.so
-*.a
-*.out
 target/
+
+# Logs and temp files
+*.log
+server.log
+
 # Dependencies
 node_modules/
 venv/
 .venv/
-__pycache__/
-.mypy_cache/
-.pytest_cache/
-.gradle/
-# Logs and temp files
-*.log
-*.tmp
-*.swp
-# Editors
-.vscode/
-.idea/
-# System files
-.DS_Store
-Thumbs.db
-# Coverage
-coverage/
-htmlcov/
-.coverage
-# Maven specific
-target/maven-status/
 ```

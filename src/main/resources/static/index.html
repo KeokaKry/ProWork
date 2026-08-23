@@ -115,6 +115,47 @@
     let notificationInterval = null;
     let reportUploaded = false; // Флаг загруженного фотоотчета
     let deferredPrompt = null; // Для установки PWA
+    let geoRequested = false; // Флаг запроса геолокации
+
+    // Глобальная функция запроса геолокации
+    function requestGeoLocation(showAlertOnError = true) {
+        if (!navigator.geolocation) {
+            if (showAlertOnError) {
+                showNotification("⚠️ Внимание: Ваш браузер не поддерживает геолокацию. Рекомендуется использовать современный браузер с поддержкой GPS.");
+            }
+            return;
+        }
+        
+        navigator.geolocation.getCurrentPosition(pos => {
+            userLat = pos.coords.latitude;
+            userLon = pos.coords.longitude;
+            const geoStatusEl = document.getElementById('geoStatus');
+            if (geoStatusEl) {
+                geoStatusEl.textContent = `Geo: ${userLat.toFixed(6)}, ${userLon.toFixed(6)}`;
+            }
+            geoRequested = true;
+        }, err => {
+            let errorMsg = "Ошибка GPS: " + err.message;
+            if (err.code === 1) {
+                errorMsg = "Доступ к геолокации запрещен пользователем.";
+                if (showAlertOnError) {
+                    showNotification("⚠️ Внимание: Необходимо включить геолокацию в настройках браузера для полноценной работы приложения.");
+                }
+            } else if (err.code === 2) {
+                errorMsg = "Позиция недоступна (проверьте настройки GPS).";
+                if (showAlertOnError) {
+                    showNotification("⚠️ Внимание: Не удалось определить местоположение. Проверьте настройки GPS на устройстве.");
+                }
+            } else if (err.code === 3) {
+                errorMsg = "Превышено время ожидания ответа от GPS.";
+            }
+            const geoStatusEl = document.getElementById('geoStatus');
+            if (geoStatusEl) {
+                geoStatusEl.textContent = errorMsg + ". Смена доступна без геопозиции.";
+            }
+            geoRequested = true;
+        }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+    }
 
     // Загрузка списка сотрудников при старте + регистрация Service Worker для PWA
     window.onload = async () => {
@@ -160,46 +201,12 @@
             console.error("Ошибка загрузки списка", e);
         }
         
-        // Получение геолокации - функция будет вызвана при входе пользователя
-        function requestGeoLocation() {
-            let geoDenied = false;
-            if (!navigator.geolocation) {
-                geoDenied = true;
-                showNotification("⚠️ Внимание: Ваш браузер не поддерживает геолокацию. Рекомендуется использовать современный браузер с поддержкой GPS.");
-                return;
-            }
-            
-            navigator.geolocation.getCurrentPosition(pos => {
-                userLat = pos.coords.latitude;
-                userLon = pos.coords.longitude;
-                const geoStatusEl = document.getElementById('geoStatus');
-                if (geoStatusEl) {
-                    geoStatusEl.textContent = `Geo: ${userLat.toFixed(6)}, ${userLon.toFixed(6)}`;
-                }
-            }, err => {
-                geoDenied = true;
-                let errorMsg = "Ошибка GPS: " + err.message;
-                if (err.code === 1) {
-                    errorMsg = "Доступ к геолокации запрещен пользователем.";
-                    showNotification("⚠️ Внимание: Необходимо включить геолокацию в настройках браузера для полноценной работы приложения.");
-                } else if (err.code === 2) {
-                    errorMsg = "Позиция недоступна (проверьте настройки GPS).";
-                    showNotification("⚠️ Внимание: Не удалось определить местоположение. Проверьте настройки GPS на устройстве.");
-                } else if (err.code === 3) {
-                    errorMsg = "Превышено время ожидания ответа от GPS.";
-                }
-                const geoStatusEl = document.getElementById('geoStatus');
-                if (geoStatusEl) {
-                    geoStatusEl.textContent = errorMsg + ". Смена доступна без геопозиции.";
-                }
-            }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
-        }
-        
         // Пробуем получить геолокацию сразу при загрузке страницы (но уведомление покажем только после входа)
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(pos => {
                 userLat = pos.coords.latitude;
                 userLon = pos.coords.longitude;
+                geoRequested = true;
             }, err => {
                 // Игнорируем ошибки при загрузке - запросим повторно при входе
                 console.log("Геолокация еще не запрошена:", err.message);
@@ -403,9 +410,22 @@
     }
 
     async function toggleWork() {
-        if (!isWorking && !userLat && !userLon) {
-            // Геолокация недоступна, но смену можно начать
-            console.log("Смена начинается без геопозиции");
+        // При начале смены проверяем геолокацию
+        if (!isWorking) {
+            // Если геолокация еще не запрашивалась, запрашиваем сейчас
+            if (!geoRequested) {
+                requestGeoLocation(true);
+                // Ждем получения геолокации (максимум 10 секунд)
+                let waitCount = 0;
+                while ((!userLat || !userLon) && waitCount < 20) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    waitCount++;
+                }
+                // Если после ожидания геолокация все еще недоступна, показываем предупреждение
+                if (!userLat || !userLon) {
+                    showNotification("⚠️ Внимание: Не удалось получить геолокацию. Проверьте настройки GPS и разрешения браузера.");
+                }
+            }
         }
 
         if (isWorking) {
@@ -434,7 +454,12 @@
                 alert(errorMsg || "Ошибка при завершении смены. Убедитесь, что вы находитесь на рабочем месте.");
             }
         } else {
-            // Начать
+            // Начать - проверяем наличие геолокации перед отправкой запроса
+            if (!userLat || !userLon) {
+                showNotification("⚠️ Внимание: Необходимо включить геолокацию для начала смены.");
+                return;
+            }
+            
             const res = await fetch('/api/work/start', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
