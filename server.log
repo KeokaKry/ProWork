@@ -31,3 +31,6 @@
 2026-08-23T18:01:24.308Z  INFO 1466 --- [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
 2026-08-23T18:01:25.723Z  INFO 1466 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path ''
 2026-08-23T18:01:25.787Z  INFO 1466 --- [           main] com.worktrcker.app.AppApplication        : Started AppApplication in 22.286 seconds (process running for 23.604)
+2026-08-23T18:10:00.138Z  INFO 1466 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-08-23T18:10:00.141Z  INFO 1466 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-08-23T18:10:02.584Z  INFO 1466 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
