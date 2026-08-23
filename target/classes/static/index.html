@@ -160,17 +160,50 @@
             console.error("Ошибка загрузки списка", e);
         }
         
-        // Получение геолокации сразу
-        let geoDenied = false;
-        if (navigator.geolocation) {
-            navigator.geolocation.watchPosition(pos => {
+        // Получение геолокации - функция будет вызвана при входе пользователя
+        function requestGeoLocation() {
+            let geoDenied = false;
+            if (!navigator.geolocation) {
+                geoDenied = true;
+                showNotification("⚠️ Внимание: Ваш браузер не поддерживает геолокацию. Рекомендуется использовать современный браузер с поддержкой GPS.");
+                return;
+            }
+            
+            navigator.geolocation.getCurrentPosition(pos => {
                 userLat = pos.coords.latitude;
                 userLon = pos.coords.longitude;
-                document.getElementById('geoStatus').textContent = `Geo: ${userLat.toFixed(6)}, ${userLon.toFixed(6)}`;
+                const geoStatusEl = document.getElementById('geoStatus');
+                if (geoStatusEl) {
+                    geoStatusEl.textContent = `Geo: ${userLat.toFixed(6)}, ${userLon.toFixed(6)}`;
+                }
             }, err => {
                 geoDenied = true;
-                document.getElementById('geoStatus').textContent = "Ошибка GPS: " + err.message + ". Смена доступна без геопозиции.";
-            }, { enableHighAccuracy: true, timeout: 10000 });
+                let errorMsg = "Ошибка GPS: " + err.message;
+                if (err.code === 1) {
+                    errorMsg = "Доступ к геолокации запрещен пользователем.";
+                    showNotification("⚠️ Внимание: Необходимо включить геолокацию в настройках браузера для полноценной работы приложения.");
+                } else if (err.code === 2) {
+                    errorMsg = "Позиция недоступна (проверьте настройки GPS).";
+                    showNotification("⚠️ Внимание: Не удалось определить местоположение. Проверьте настройки GPS на устройстве.");
+                } else if (err.code === 3) {
+                    errorMsg = "Превышено время ожидания ответа от GPS.";
+                }
+                const geoStatusEl = document.getElementById('geoStatus');
+                if (geoStatusEl) {
+                    geoStatusEl.textContent = errorMsg + ". Смена доступна без геопозиции.";
+                }
+            }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+        }
+        
+        // Пробуем получить геолокацию сразу при загрузке страницы (но уведомление покажем только после входа)
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                userLat = pos.coords.latitude;
+                userLon = pos.coords.longitude;
+            }, err => {
+                // Игнорируем ошибки при загрузке - запросим повторно при входе
+                console.log("Геолокация еще не запрошена:", err.message);
+            }, { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 });
         }
     };
     
@@ -226,6 +259,8 @@
         document.getElementById('loginCard').style.display = 'none';
         document.getElementById('workPanel').style.display = 'block';
         document.getElementById('welcomeText').textContent = `Привет, ${currentUser.fullName}`;
+        // Запрашиваем геолокацию после отображения панели работы
+        requestGeoLocation();
         checkActiveWork();
         // Загружаем задание только после проверки активной смены
         // Вкладка задания будет показана только если есть активная смена и_pending_ задание
